@@ -150,6 +150,16 @@ export default function ActiveTrialPage() {
           <Link href="mailto:ipmobi.net@gmail.com?subject=Order%20Inquiry" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-black font-medium rounded-lg hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20">
             Upgrade to Full Access
           </Link>
+          <button
+            onClick={() => {
+              localStorage.removeItem("ipmobi_trial_token");
+              localStorage.removeItem("ipmobi_trial_proxy");
+              window.location.href = "/trial";
+            }}
+            className="mt-3 w-full px-6 py-3 rounded-lg border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 transition-all text-sm"
+          >
+            Clear & Start New Trial
+          </button>
         </div>
       </div>
     );
