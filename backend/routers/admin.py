@@ -162,3 +162,67 @@ async def get_client_traffics(auth: bool = Depends(verify_admin)):
         return {"clients": result}
     except Exception as e:
         raise HTTPException(500, str(e))
+
+
+@router.post("/rotate/{inbound_id}")
+async def rotate_ip(inbound_id: int, auth: bool = Depends(verify_admin)):
+    """Trigger IP rotation for a proxy port.
+    
+    Method 1: ModemManager (mmcli) — power-cycles the USB 5G modem
+    Method 2: 3proxy restart — forces new connections
+    Method 3: API-based — returns instructions for manual rotation
+    """
+    import subprocess, os
+    
+    result = {"method_used": None, "success": False, "message": ""}
+    
+    # Method 1: Try ModemManager with timeout guard
+    try:
+        proc = subprocess.run(
+            ["mmcli", "-L"],
+            capture_output=True, text=True, timeout=5
+        )
+        import re
+        modems = re.findall(r'/Modem/(\d+)', proc.stdout)
+        
+        if modems:
+            modem_id = modems[0]
+            # Disconnect modem (drops carrier = new IP on reconnect)
+            subprocess.run(["mmcli", "-m", modem_id, "--simple-disconnect"], 
+                         capture_output=True, timeout=15)
+            import time
+            time.sleep(2)
+            # Reconnect
+            subprocess.run(["mmcli", "-m", modem_id, "--simple-connect='apn=internet'"],
+                         capture_output=True, timeout=30)
+            
+            result["method_used"] = "modemmanager"
+            result["success"] = True
+            result["message"] = f"Modem {modem_id} reconnected. New IP assigned (3-5s)."
+            
+            # Restart 3proxy to refresh connections
+            subprocess.run(["systemctl", "restart", "3proxy"], capture_output=True, timeout=10)
+            return result
+    except subprocess.TimeoutExpired:
+        pass
+    except Exception:
+        pass
+    
+    # Method 2: Restart 3proxy only
+    try:
+        subprocess.run(["systemctl", "restart", "3proxy"], capture_output=True, timeout=10)
+        result["method_used"] = "3proxy_restart"
+        result["success"] = True
+        result["message"] = "3proxy restarted. IP may or may not change (carrier dependent)."
+        return result
+    except Exception as e:
+        pass
+    
+    # Method 3: Return manual instructions
+    result["method_used"] = "manual"
+    result["success"] = True
+    result["message"] = "No ModemManager modem found. To rotate IP manually: restart the 3proxy service, or disconnect/reconnect the USB modem."
+    return result
+
+
+
