@@ -9,7 +9,19 @@ import type { Locale } from "@/lib/translations";
 const locales: { code: Locale; label: string }[] = [
   { code: "en", label: "EN" },
   { code: "zh", label: "中文" },
-  { code: "ru", label: "RU" },
+  { code: "ru", label: "РУС" },
+  { code: "ja", label: "日本語" },
+  { code: "ko", label: "한국어" },
+  { code: "vi", label: "Tiếng Việt" },
+  { code: "th", label: "ไทย" },
+  { code: "id", label: "Bahasa" },
+  { code: "ms", label: "Bahasa Melayu" },
+  { code: "hi", label: "हिन्दी" },
+  { code: "ar", label: "العربية" },
+  { code: "pt", label: "Português" },
+  { code: "es", label: "Español" },
+  { code: "de", label: "Deutsch" },
+  { code: "fr", label: "Français" },
 ];
 
 const navLinks: { key: string; href: string; label?: string; sublinks?: { label: string; href: string }[] }[] = [
