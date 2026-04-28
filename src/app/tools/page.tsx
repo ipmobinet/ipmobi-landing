@@ -377,15 +377,15 @@ export default function ToolsPage() {
               {results.ports ? (
                 <>
                   <p className="text-xs text-slate-500 mb-2">Browser-based scan — results are approximate. Open: {results.ports.filter(p => p.state === 'open').length}, Closed: {results.ports.filter(p => p.state === 'closed').length}</p>
-                  <div className="grid grid-cols-4 gap-1 max-h-40 overflow-y-auto">
+                  <div className="grid grid-cols-4 gap-1">
                     {results.ports.filter(p => p.state === 'open').map(p => (
                       <div key={p.port} className="bg-emerald-500/10 text-emerald-400 text-xs font-mono px-2 py-1 rounded text-center">
                         {p.port}<br/><span className="text-[10px] text-slate-500">{p.service}</span>
                       </div>
                     ))}
-                    {results.ports.filter(p => p.state !== 'open').slice(0, 8).map(p => (
-                      <div key={p.port} className="bg-slate-500/5 text-slate-600 text-xs font-mono px-2 py-1 rounded text-center">
-                        {p.port}<br/><span className="text-[10px]">{p.state}</span>
+                    {results.ports.filter(p => p.state !== 'open').slice(0, 6).map(p => (
+                      <div key={p.port} className="bg-slate-500/5 text-slate-600 text-xs font-mono px-2 py-0.5 rounded text-center inline-block">
+                        {p.port}
                       </div>
                     ))}
                   </div>

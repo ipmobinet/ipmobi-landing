@@ -59,9 +59,10 @@ export interface ConsistencyResult {
 // IP Info — uses ip-api.com for JSON data
 export async function checkIP(): Promise<IPInfo> {
   try {
-    const resp = await fetch('http://ip-api.com/json/?fields=query,isp,as,asname,city,country,countryCode,lat,lon,org,proxy,hosting,mobile', {
+    const resp = await fetch('https://ip-api.com/json/?fields=query,isp,as,asname,city,country,countryCode,lat,lon,org,proxy,hosting,mobile', {
       signal: AbortSignal.timeout(8000),
     });
+    if (!resp.ok) throw new Error('IP-API failed');
     const data = await resp.json();
 
     // Additional check via ifconfig.co for IPv6 and connection type
@@ -282,7 +283,7 @@ export async function checkDNS(): Promise<DNSResult> {
                 let location = 'Unknown';
                 let isp = 'Unknown';
                 try {
-                  const locResp = await fetch(`http://ip-api.com/json/${serverIP}?fields=isp,city,country`, {
+                  const locResp = await fetch(`https://ip-api.com/json/${serverIP}?fields=isp,city,country`, {
                     signal: AbortSignal.timeout(3000),
                   });
                   if (locResp.ok) {
@@ -606,7 +607,7 @@ export async function checkReputation(ip: string): Promise<ReputationResult> {
 
     // Check via ip-api proxy flag
     try {
-      const ipResp = await fetch(`http://ip-api.com/json/${ip}?fields=proxy,hosting,isp,org,mobile`, {
+      const ipResp = await fetch(`https://ip-api.com/json/${ip}?fields=proxy,hosting,isp,org,mobile`, {
         signal: AbortSignal.timeout(5000),
       });
       if (ipResp.ok) {
