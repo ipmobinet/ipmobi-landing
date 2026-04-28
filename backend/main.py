@@ -83,5 +83,29 @@ async def public_rotate_ip(api_key: str = Header(None)):
         result["message"] = str(e)
     return result
 
+
+
+from modems.manager import detect_modems, generate_3proxy_config, save_state, rotate_modem, load_state
+
+@app.get("/api/modems")
+async def list_modems():
+    """List all detected modems with their status"""
+    from modems.manager import detect_modems
+    modems = detect_modems()
+    return {"modems": [m.to_dict() for m in modems], "count": len(modems)}
+
+@app.post("/api/modems/{modem_id}/rotate")
+async def rotate_modem_endpoint(modem_id: str):
+    """Rotate IP for a specific modem"""
+    success = rotate_modem(modem_id)
+    return {"success": success, "modem_id": modem_id}
+
+@app.get("/api/modems/config")
+async def get_proxy_config():
+    """Generate and return the current 3proxy config"""
+    modems = detect_modems()
+    config = generate_3proxy_config(modems)
+    return {"config": config, "modem_count": len(modems)}
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8090, reload=True)
