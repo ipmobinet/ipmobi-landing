@@ -355,12 +355,12 @@ export default function ToolsPage() {
             <ToolCard title="HTTP Headers Inspector" icon={<Terminal size={20} className="text-green-400" />}
               status={status.headers} onRun={runHeaders} id="headers">
               {results.headers ? (
-                <div className="space-y-1 max-h-60 overflow-y-auto custom-scrollbar">
+                <div className="space-y-0.5 text-[11px]">
                   {Object.entries(results.headers).map(([k, v]) => {
                     const isProxyHeader = ['x-forwarded', 'via', 'x-real-ip', 'x-proxy'].some(p => k.toLowerCase().includes(p));
                     return (
-                      <div key={k} className={`flex gap-2 text-xs font-mono py-0.5 ${isProxyHeader ? 'text-amber-400 bg-amber-500/5 px-1 rounded' : ''}`}>
-                        <span className="text-slate-500 shrink-0">{k}:</span>
+                      <div key={k} className={`flex gap-1 font-mono leading-tight ${isProxyHeader ? 'text-amber-400 bg-amber-500/5 px-1 rounded' : ''}`}>
+                        <span className="text-slate-500 shrink-0 whitespace-nowrap">{k}:</span>
                         <span className="text-slate-300 break-all">{v}</span>
                       </div>
                     );
