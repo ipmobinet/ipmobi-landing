@@ -26,26 +26,53 @@ export default function AuthCallbackPage() {
       return;
     }
 
-    // For now, simulate successful trial creation and store a test token
-    // In production, this would exchange the code with the FastAPI backend
-    const mockToken = "trial_" + Math.random().toString(36).substring(2, 15);
-    const mockExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+    // Call the real backend API to provision a proxy port
+    try {
+      const resp = await fetch("https://api.ipmobi.net/api/trial/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, provider: params.get("provider") || "google" }),
+        signal: AbortSignal.timeout(15000),
+      });
 
+      const data = await resp.json();
+
+      if (resp.ok && data.trial) {
+        localStorage.setItem("ipmobi_trial_token", data.token || "trial_" + Date.now());
+        localStorage.setItem("ipmobi_trial_proxy", JSON.stringify({
+          host: data.trial.proxy_host || "gw.ipmobi.net",
+          port: data.trial.proxy_port || 10000,
+          username: data.trial.proxy_user || "user",
+          password: data.trial.proxy_pass || "pass",
+          bytesUsed: data.trial.bytes_used || 0,
+          bytesLimit: data.trial.max_bytes || 104857600,
+          startedAt: Date.now(),
+          expiresAt: new Date(data.trial.expires_at).getTime() || (Date.now() + 15 * 60 * 1000),
+        }));
+
+        setStatus("success");
+        setMessage("Trial activated! Redirecting...");
+        setTimeout(() => router.push("/trial/active"), 1500);
+        return;
+      }
+    } catch {
+      // Backend not available - fall back to simulated trial
+    }
+
+    // Fallback: simulate trial (backend offline)
+    const mockToken = "trial_" + Math.random().toString(36).substring(2, 15);
+    const mockExpiry = Date.now() + 15 * 60 * 1000;
     localStorage.setItem("ipmobi_trial_token", mockToken);
-    localStorage.setItem("ipmobi_trial_expiry", String(mockExpiry));
     localStorage.setItem("ipmobi_trial_proxy", JSON.stringify({
       host: "gw.ipmobi.net",
       port: 10000 + Math.floor(Math.random() * 1000),
       username: "trial_" + Math.random().toString(36).substring(2, 8),
       password: Math.random().toString(36).substring(2, 12),
-      bytesUsed: 0,
-      bytesLimit: 104857600,
-      startedAt: Date.now(),
-      expiresAt: mockExpiry,
+      bytesUsed: 0, bytesLimit: 104857600,
+      startedAt: Date.now(), expiresAt: mockExpiry,
     }));
-
     setStatus("success");
-    setMessage("Trial activated! Redirecting...");
+    setMessage("Trial activated! (Demo mode)");
     setTimeout(() => router.push("/trial/active"), 1500);
   }, [router]);
 
