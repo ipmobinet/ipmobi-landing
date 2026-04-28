@@ -110,6 +110,26 @@ export default function DashboardOverview() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      {/* No Trial Banner */}
+      {!proxy && (
+        <div className="p-8 rounded-xl bg-white/[0.03] border border-surface-border text-center">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+            <Shield size={32} className="text-emerald-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">No Active Proxy</h2>
+          <p className="text-slate-400 text-sm mb-6 max-w-md mx-auto">
+            Start a free trial to get your dedicated mobile proxy credentials and manage your infrastructure.
+          </p>
+          <Link
+            href="/trial"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-emerald-500 text-black font-medium hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
+          >
+            <Zap size={18} />
+            Start Free Trial
+          </Link>
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
