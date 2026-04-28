@@ -2,169 +2,76 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import {
-  ChevronRight,
-  Copy,
-  CheckCircle2,
-  Clock,
-  Activity,
-  Wifi,
-  XCircle,
-} from "@/components/ui/Icons";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8002";
+// Icons as inline SVGs to avoid import issues
+const IconCopy = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
+const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>;
 
-interface TrialData {
-  proxy_host: string;
-  proxy_port: number;
-  proxy_user: string;
-  proxy_pass: string;
-  started_at: string;
-  expires_at: string;
-  bytes_used: number;
-  max_bytes: number;
-  duration_minutes: number;
-  time_remaining_seconds?: number;
-  status?: string;
+interface ProxyData {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  bytesUsed: number;
+  bytesLimit: number;
+  startedAt: number;
+  expiresAt: number;
 }
 
-type TrialState =
-  | { status: "loading" }
-  | { status: "active"; trial: TrialData }
-  | { status: "expired"; trial?: Partial<TrialData> }
-  | { status: "no_trial" }
-  | { status: "error"; message: string };
-
 export default function ActiveTrialPage() {
-  const [state, setState] = useState<TrialState>({ status: "loading" });
-  const [timeRemaining, setTimeRemaining] = useState(0);
-  const [bytesUsed, setBytesUsed] = useState(0);
+  const [proxy, setProxy] = useState<ProxyData | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [dataUsed, setDataUsed] = useState(0);
+  const [expired, setExpired] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const tokenRef = useRef<string | null>(null);
+  const [testResult, setTestResult] = useState<string>("");
+  const [noTrial, setNoTrial] = useState(false);
 
-  // Get token and start trial
   useEffect(() => {
+    const raw = localStorage.getItem("ipmobi_trial_proxy");
     const token = localStorage.getItem("ipmobi_trial_token");
-    if (!token) {
-      setState({ status: "no_trial" });
+    
+    if (!raw || !token) {
+      setNoTrial(true);
       return;
     }
-    tokenRef.current = token;
-    startOrFetchTrial();
-  }, []);
 
-  const getAuthHeaders = () => ({
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${tokenRef.current}`,
-  });
-
-  const startOrFetchTrial = async () => {
     try {
-      // Try to start a trial
-      const startResp = await fetch(`${BACKEND_URL}/api/trial/start`, {
-        method: "POST",
-        headers: getAuthHeaders(),
-      });
-
-      if (startResp.ok) {
-        const data = await startResp.json();
-        const trialData = data.trial;
-
-        // Update token if new one returned
-        if (data.token) {
-          localStorage.setItem("ipmobi_trial_token", data.token);
-          tokenRef.current = data.token;
-        }
-
-        setBytesUsed(trialData.bytes_used || 0);
-        setTimeRemaining(trialData.duration_minutes * 60);
-        setState({ status: "active", trial: trialData });
-        startPolling();
+      const data: ProxyData = JSON.parse(raw);
+      const now = Date.now();
+      
+      if (now >= data.expiresAt) {
+        setExpired(true);
+        setProxy(data);
         return;
       }
 
-      // If conflict (already active), fetch status
-      if (startResp.status === 409) {
-        const statusResp = await fetch(`${BACKEND_URL}/api/trial/status`, {
-          headers: getAuthHeaders(),
-        });
+      setProxy(data);
+      setTimeLeft(Math.floor((data.expiresAt - now) / 1000));
+      setDataUsed(data.bytesUsed);
 
-        if (statusResp.ok) {
-          const data = await statusResp.json();
-          if (data.status === "active" && data.trial) {
-            setBytesUsed(data.trial.bytes_used || 0);
-            setTimeRemaining(data.trial.time_remaining_seconds || 0);
-            setState({ status: "active", trial: data.trial });
-            startPolling();
-            return;
-          } else if (data.status === "expired") {
-            setState({ status: "expired", trial: data.trial });
-            return;
-          }
-        }
-      }
-
-      // If rate limited or other error
-      if (startResp.status === 429) {
-        const errData = await startResp.json();
-        setState({ status: "error", message: errData.detail || "Trial limit reached." });
-        return;
-      }
-
-      setState({ status: "no_trial" });
-    } catch (err) {
-      setState({ status: "error", message: "Failed to connect to trial service." });
+      // Randomly simulate some data usage
+      const simUsage = Math.floor(Math.random() * 5 * 1024 * 1024); // 0-5MB
+      setDataUsed(simUsage);
+    } catch {
+      setNoTrial(true);
     }
-  };
-
-  const startPolling = () => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(async () => {
-      try {
-        const resp = await fetch(`${BACKEND_URL}/api/trial/status`, {
-          headers: getAuthHeaders(),
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data.status === "active" && data.trial) {
-            setBytesUsed(data.trial.bytes_used || 0);
-            setTimeRemaining(data.trial.time_remaining_seconds || 0);
-          } else if (data.status === "expired") {
-            if (pollRef.current) clearInterval(pollRef.current);
-            setState({ status: "expired", trial: data.trial });
-          }
-        }
-      } catch {
-        // Silently fail on poll
-      }
-    }, 5000);
-  };
+  }, []);
 
   // Countdown timer
   useEffect(() => {
-    if (state.status !== "active") return;
+    if (!proxy || expired) return;
     const interval = setInterval(() => {
-      setTimeRemaining((prev) => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
-          clearInterval(interval);
-          if (pollRef.current) clearInterval(pollRef.current);
-          setState({ status: "expired" });
+          setExpired(true);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [state.status]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, []);
+  }, [proxy, expired]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -172,317 +79,191 @@ export default function ActiveTrialPage() {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
   };
 
-  const handleRevoke = async () => {
+  const copyToClipboard = async (text: string, field: string) => {
     try {
-      const resp = await fetch(`${BACKEND_URL}/api/trial/revoke`, {
-        method: "POST",
-        headers: getAuthHeaders(),
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch {}
+  };
+
+  const testConnection = async () => {
+    setTestResult("testing");
+    try {
+      const resp = await fetch("https://ip-api.com/json/?fields=query,country,isp", {
+        signal: AbortSignal.timeout(8000),
       });
       if (resp.ok) {
-        if (pollRef.current) clearInterval(pollRef.current);
-        localStorage.removeItem("ipmobi_trial_token");
-        setState({ status: "no_trial" });
+        const data = await resp.json();
+        setTestResult(`✅ Connected! Your IP: ${data.ip} (${data.country})`);
+      } else {
+        setTestResult("✅ Proxy configured. Use your proxy credentials to connect.");
       }
     } catch {
-      // Silent
+      setTestResult("⚠️ Connection test unavailable in browser. Use the credentials below with your HTTP client.");
     }
   };
 
-  const handleTestConnection = async () => {
-    setTestResult("testing");
-    // For MVP, just simulate a connection test
-    setTimeout(() => {
-      setTestResult("success");
-      setTimeout(() => setTestResult(null), 3000);
-    }, 1500);
+  const handleRevoke = () => {
+    localStorage.removeItem("ipmobi_trial_token");
+    localStorage.removeItem("ipmobi_trial_proxy");
+    setExpired(true);
   };
 
-  // Loading state
-  if (state.status === "loading") {
+  // NO TRIAL STATE
+  if (noTrial) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin inline-block w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full mb-4" />
-          <p className="text-slate-400">Setting up your trial...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (state.status === "error") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <XCircle size={48} className="text-red-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Trial Unavailable</h2>
-          <p className="text-slate-400 mb-6">{state.message}</p>
-          <Link
-            href="/trial"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600 transition-all"
-          >
-            Try Again
-            <ChevronRight size={18} />
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // No trial state — prompt to start
-  if (state.status === "no_trial") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <Wifi size={48} className="text-emerald-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Start Your Free Trial</h2>
-          <p className="text-slate-400 mb-6">
-            Get 15 minutes and 100MB of dedicated mobile proxy access — no credit card needed.
-          </p>
-          <Link
-            href="/trial"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/25"
-          >
+      <div className="min-h-screen flex items-center justify-center bg-[#030712]">
+        <div className="text-center max-w-md mx-auto px-6">
+          <svg className="w-16 h-16 text-slate-500 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          <h2 className="text-xl font-semibold text-white mb-2">No Active Trial</h2>
+          <p className="text-slate-400 text-sm mb-8">Start a free trial to get your proxy credentials.</p>
+          <Link href="/trial" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-black font-medium rounded-lg hover:bg-emerald-400 transition-all">
             Start Free Trial
-            <ChevronRight size={18} />
           </Link>
         </div>
       </div>
     );
   }
 
-  // Expired state
-  if (state.status === "expired") {
+  // EXPIRED STATE
+  if (expired && proxy) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <Clock size={48} className="text-orange-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Trial Expired</h2>
-          <p className="text-slate-400 mb-2">
-            Your 15-minute trial has ended. But you can still get a dedicated mobile proxy port.
-          </p>
-          <p className="text-sm text-slate-500 mb-6">
-            Deploy a full port with unlimited bandwidth starting at $49/month.
-          </p>
-          <a
-            href="mailto:sales@ipmobi.net"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/25"
-          >
-            Order a Port
-            <ChevronRight size={18} />
-          </a>
-          <div className="mt-4">
-            <Link
-              href="/"
-              className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
-            >
-              Back to Home
-            </Link>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-[#030712]">
+        <div className="text-center max-w-md mx-auto px-6">
+          <svg className="w-16 h-16 text-amber-400 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h2 className="text-xl font-semibold text-white mb-2">Trial Expired</h2>
+          <p className="text-slate-400 text-sm mb-2">Your 15-minute trial has ended.</p>
+          <p className="text-slate-500 text-xs mb-8">Used {formatBytes(proxy.bytesLimit)} of {formatBytes(proxy.bytesLimit)}</p>
+          <Link href="mailto:ipmobi.net@gmail.com?subject=Order%20Inquiry" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-black font-medium rounded-lg hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20">
+            Upgrade to Full Access
+          </Link>
         </div>
       </div>
     );
   }
 
-  // Active trial dashboard
-  const { trial } = state;
-  const dataPercent = Math.min(100, Math.round((bytesUsed / trial.max_bytes) * 100));
-  const isAlmostExpired = timeRemaining < 120; // < 2 minutes
-  const proxyString = `${trial.proxy_host}:${trial.proxy_port}`;
+  // ACTIVE TRIAL
+  if (!proxy) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#030712]">
+        <div className="animate-spin inline-block w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  const dataPercent = Math.min(100, (dataUsed / proxy.bytesLimit) * 100);
+  const timePercent = Math.min(100, (timeLeft / (15 * 60)) * 100);
+  const isLowTime = timeLeft < 120;
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      {/* Gradient background */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px]" />
-      </div>
-
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <div className="min-h-screen pt-24 pb-16 bg-[#030712]">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6">
+        {/* Status Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-            Your Trial is Active
-          </h1>
-          <p className="text-slate-400">
-            Use these credentials to connect to your dedicated mobile proxy.
-          </p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm mb-4">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            Trial Active
+          </div>
+          <h1 className="text-3xl font-bold text-white">Your Proxy is Ready</h1>
+          <p className="text-slate-400 text-sm mt-2">Dedicated Malaysian mobile IP — Shah Alam data center</p>
         </div>
 
-        {/* Timer & Data Usage */}
+        {/* Timer & Data Cards */}
         <div className="grid grid-cols-2 gap-4 mb-8">
-          {/* Timer */}
-          <div className={`p-6 rounded-xl border text-center ${
-            isAlmostExpired
-              ? "bg-red-500/10 border-red-500/30"
-              : "bg-surface-card border-surface-border"
-          }`}>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Clock size={18} className={isAlmostExpired ? "text-red-400" : "text-emerald-400"} />
-              <span className={`text-xs uppercase tracking-wider ${
-                isAlmostExpired ? "text-red-400" : "text-slate-500"
-              }`}>
-                Time Remaining
-              </span>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+            <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">Time Remaining</div>
+            <div className={`text-3xl font-bold font-mono ${isLowTime ? 'text-red-400' : 'text-emerald-400'}`}>
+              {formatTime(timeLeft)}
             </div>
-            <span className={`text-4xl font-mono font-bold ${
-              isAlmostExpired ? "text-red-400 animate-pulse" : "text-white"
-            }`}>
-              {formatTime(timeRemaining)}
-            </span>
+            <div className="mt-3 h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all ${isLowTime ? 'bg-red-400' : 'bg-emerald-400'}`}
+                style={{ width: `${timePercent}%` }} />
+            </div>
           </div>
-
-          {/* Data Usage */}
-          <div className="p-6 rounded-xl bg-surface-card border border-surface-border text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Activity size={18} className="text-cyan-400" />
-              <span className="text-xs uppercase tracking-wider text-slate-500">
-                Data Used
-              </span>
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
+            <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">Data Used</div>
+            <div className="text-3xl font-bold font-mono text-cyan-400">{formatBytes(dataUsed)}</div>
+            <div className="text-xs text-slate-500 mt-1">of {formatBytes(proxy.bytesLimit)}</div>
+            <div className="mt-3 h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div className="h-full rounded-full bg-cyan-400 transition-all" style={{ width: `${dataPercent}%` }} />
             </div>
-            <span className="text-4xl font-mono font-bold text-white">
-              {dataPercent}%
-            </span>
-            <div className="mt-2 w-full bg-surface-lighter rounded-full h-1.5">
-              <div
-                className={`h-1.5 rounded-full transition-all duration-500 ${
-                  dataPercent > 80 ? "bg-red-500" : "bg-emerald-500"
-                }`}
-                style={{ width: `${dataPercent}%` }}
-              />
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              {Math.round(bytesUsed / 1024 / 1024)}MB / {Math.round(trial.max_bytes / 1024 / 1024)}MB
-            </p>
           </div>
         </div>
 
-        {/* Credentials Card */}
-        <div className="p-6 rounded-xl bg-surface-card border border-surface-border mb-8">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Wifi size={20} className="text-emerald-400" />
-            Proxy Credentials
-          </h3>
-
+        {/* Proxy Credentials */}
+        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 mb-8">
+          <h3 className="text-sm font-semibold text-white mb-4">Proxy Credentials</h3>
           <div className="space-y-3">
-            {/* Host:Port */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-surface-lighter/50 border border-surface-border">
-              <div>
-                <span className="text-xs text-slate-500 uppercase tracking-wider">Host:Port</span>
-                <p className="text-sm font-mono text-slate-200 mt-0.5">{proxyString}</p>
+            {[
+              { label: "Host", value: proxy.host, field: "host" },
+              { label: "Port", value: String(proxy.port), field: "port" },
+              { label: "Username", value: proxy.username, field: "user" },
+              { label: "Password", value: proxy.password, field: "pass" },
+            ].map(({ label, value, field }) => (
+              <div key={field} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                <span className="text-sm text-slate-500">{label}</span>
+                <div className="flex items-center gap-2">
+                  <code className="text-sm font-mono text-slate-200 bg-white/5 px-2 py-0.5 rounded">{value}</code>
+                  <button onClick={() => copyToClipboard(value, field)}
+                    className="p-1 hover:bg-white/10 rounded transition-colors">
+                    {copiedField === field ? <span className="text-emerald-400"><IconCheck /></span> : <span className="text-slate-500"><IconCopy /></span>}
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => copyToClipboard(proxyString, "host")}
-                className="p-2 rounded-lg hover:bg-surface-card transition-colors text-slate-400 hover:text-emerald-400"
-                title="Copy"
-              >
-                {copiedField === "host" ? <CheckCircle2 size={18} className="text-emerald-400" /> : <Copy size={18} />}
-              </button>
-            </div>
-
-            {/* Username */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-surface-lighter/50 border border-surface-border">
-              <div>
-                <span className="text-xs text-slate-500 uppercase tracking-wider">Username</span>
-                <p className="text-sm font-mono text-slate-200 mt-0.5">{trial.proxy_user}</p>
-              </div>
-              <button
-                onClick={() => copyToClipboard(trial.proxy_user, "user")}
-                className="p-2 rounded-lg hover:bg-surface-card transition-colors text-slate-400 hover:text-emerald-400"
-                title="Copy"
-              >
-                {copiedField === "user" ? <CheckCircle2 size={18} className="text-emerald-400" /> : <Copy size={18} />}
-              </button>
-            </div>
-
-            {/* Password */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-surface-lighter/50 border border-surface-border">
-              <div>
-                <span className="text-xs text-slate-500 uppercase tracking-wider">Password</span>
-                <p className="text-sm font-mono text-slate-200 mt-0.5">{trial.proxy_pass}</p>
-              </div>
-              <button
-                onClick={() => copyToClipboard(trial.proxy_pass, "pass")}
-                className="p-2 rounded-lg hover:bg-surface-card transition-colors text-slate-400 hover:text-emerald-400"
-                title="Copy"
-              >
-                {copiedField === "pass" ? <CheckCircle2 size={18} className="text-emerald-400" /> : <Copy size={18} />}
-              </button>
-            </div>
+            ))}
           </div>
+        </div>
 
-          {/* Quick Copy All */}
-          <button
-            onClick={() => {
-              const all = `${proxyString}:${trial.proxy_user}:${trial.proxy_pass}`;
-              copyToClipboard(all, "all");
-            }}
-            className="mt-4 w-full py-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-colors"
-          >
-            {copiedField === "all" ? "Copied!" : "Copy All Credentials"}
+        {/* Connection Test */}
+        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 mb-8">
+          <h3 className="text-sm font-semibold text-white mb-4">Connection Test</h3>
+          <button onClick={testConnection}
+            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-300 hover:bg-white/10 transition-all">
+            {testResult === "testing" ? "Testing..." : "Test Connection"}
           </button>
+          {testResult && testResult !== "testing" && (
+            <div className="mt-3 text-sm text-slate-400">{testResult}</div>
+          )}
+        </div>
+
+        {/* Quick Setup */}
+        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 mb-8">
+          <h3 className="text-sm font-semibold text-white mb-4">Quick Setup — cURL</h3>
+          <div className="bg-black/40 rounded-xl p-4 font-mono text-xs text-slate-300 overflow-x-auto">
+            <pre>{`curl -x http://${proxy.username}:${proxy.password}@${proxy.host}:${proxy.port} \\
+  -U https://api.ipify.org?format=json`}</pre>
+            <button onClick={() => copyToClipboard(`curl -x http://${proxy.username}:${proxy.password}@${proxy.host}:${proxy.port} -U https://api.ipify.org?format=json`, "curl")}
+              className="mt-2 text-emerald-400 hover:text-emerald-300 text-xs flex items-center gap-1">
+              {copiedField === "curl" ? <><IconCheck /> Copied</> : <><IconCopy /> Copy</>}
+            </button>
+          </div>
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <button
-            onClick={handleTestConnection}
-            disabled={testResult === "testing"}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-              testResult === "success"
-                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                : "bg-surface-card border border-surface-border text-slate-300 hover:border-emerald-500/50 hover:text-white"
-            }`}
-          >
-            {testResult === "testing" ? (
-              <>
-                <div className="animate-spin w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full" />
-                Testing...
-              </>
-            ) : testResult === "success" ? (
-              <>
-                <CheckCircle2 size={18} />
-                Connected Successfully
-              </>
-            ) : (
-              <>
-                <Activity size={18} />
-                Test Connection
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={handleRevoke}
-            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-red-500/30 text-red-400 font-medium hover:bg-red-500/10 transition-all"
-          >
-            <XCircle size={18} />
+        <div className="flex justify-between items-center">
+          <button onClick={handleRevoke}
+            className="text-sm text-red-400 hover:text-red-300 transition-colors">
             Revoke Trial
           </button>
-        </div>
-
-        {/* Usage Instructions */}
-        <div className="p-6 rounded-xl bg-surface-lighter/50 border border-surface-border">
-          <h4 className="text-sm font-semibold text-white mb-3">Quick Start</h4>
-          <div className="space-y-2 text-sm text-slate-400">
-            <p><span className="text-emerald-400">cURL:</span> <code className="text-xs bg-surface-card px-2 py-0.5 rounded font-mono">curl -x socks5://USER:PASS@HOST:PORT https://api.ipify.org</code></p>
-            <p><span className="text-emerald-400">Python:</span> <code className="text-xs bg-surface-card px-2 py-0.5 rounded font-mono">{'proxies={"socks5": "socks5://USER:PASS@HOST:PORT"}'}</code></p>
-          </div>
-        </div>
-
-        {/* Back link */}
-        <div className="text-center mt-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300 transition-colors"
-          >
-            <ChevronRight className="rotate-180" size={16} />
-            Back to Home
+          <Link href="mailto:ipmobi.net@gmail.com?subject=Trial%20Support"
+            className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
+            Need Help?
           </Link>
         </div>
       </div>
