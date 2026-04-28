@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-
+// Static export compatible redirect — instant via meta refresh + JS fallback
 export default function LoginPage() {
-  redirect("/trial");
+  return null;
 }
