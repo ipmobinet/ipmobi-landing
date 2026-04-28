@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from database import init_db
 from routers.auth import router as auth_router
 from routers.trial import router as trial_router
+from routers.admin import router as admin_router
 from config import BACKEND_URL, FRONTEND_URL
 
 
@@ -38,6 +39,7 @@ app.add_middleware(
 # Mount routers
 app.include_router(auth_router)
 app.include_router(trial_router)
+app.include_router(admin_router)
 
 
 @app.get("/health")
