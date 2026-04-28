@@ -35,14 +35,47 @@ async def _xui_login() -> httpx.AsyncClient:
     return client
 
 
+from datetime import datetime, timedelta
+
+# Rate limiting for login attempts
+login_attempts: dict = {}
+
 @router.post("/verify")
-async def verify_admin_password(data: dict):
+async def verify_admin_password(data: dict, request_ip: str = "unknown"):
     """Verify admin password - returns 200 if correct"""
+    # Simple IP-based rate limiting
+    ip = "global"  # In production, get from request
+    now = datetime.now()
+    
+    # Clean old entries
+    login_attempts[ip] = [t for t in login_attempts.get(ip, []) if now - t < timedelta(minutes=5)]
+    
+    # Check rate
+    if len(login_attempts.get(ip, [])) >= 5:
+        raise HTTPException(429, "Too many attempts. Try again in 5 minutes.")
+    
     pwd = data.get("password", "")
     expected = os.getenv("ADMIN_PASSWORD", "changeme")
+    
     if pwd == expected:
+        login_attempts[ip] = []  # Reset on success
         return {"status": "ok"}
+    
+    login_attempts.setdefault(ip, []).append(now)
     raise HTTPException(403, "Invalid admin password")
+
+@router.get("/check-session")
+async def check_session(authorization: str = Header(None)):
+    """Verify that the current session/token is still valid"""
+    if not authorization:
+        raise HTTPException(401, "Not authenticated")
+    token = authorization.replace("Bearer ", "")
+    expected = os.getenv("ADMIN_PASSWORD", "changeme")
+    if token == expected:
+        return {"status": "ok", "authenticated": True}
+    raise HTTPException(401, "Invalid session")
+
+
 
 async def verify_admin(authorization: str = Header(None)):
     if not authorization:

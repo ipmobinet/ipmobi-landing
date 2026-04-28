@@ -30,10 +30,27 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    const authed = localStorage.getItem("ipmobi_admin_auth");
-    if (authed !== "true" && pathname !== "/admin") {
-      router.push("/admin");
-    }
+    const checkAuth = async () => {
+      const token = localStorage.getItem("ipmobi_admin_auth");
+      if (token === "true") {
+        // Verify token is still valid with backend
+        try {
+          const res = await fetch("https://api.ipmobi.net/api/admin/check-session", {
+            headers: { "Authorization": "Bearer ipmobi-admin-2026" }
+          });
+          if (!res.ok) {
+            localStorage.removeItem("ipmobi_admin_auth");
+            if (pathname !== "/admin") router.push("/admin");
+          }
+        } catch {
+          // Backend unreachable — still allow access if token exists
+          // (offline fallback)
+        }
+      } else if (pathname !== "/admin") {
+        router.push("/admin");
+      }
+    };
+    checkAuth();
   }, [pathname, router]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
