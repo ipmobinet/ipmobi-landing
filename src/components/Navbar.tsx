@@ -141,7 +141,7 @@ export default function Navbar() {
 
           {/* Client Portal */}
           <Link
-            href="/login"
+            href="/dashboard"
             className="text-sm text-slate-400 hover:text-white transition-colors"
           >
             {t("clientPortal")}
