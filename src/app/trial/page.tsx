@@ -4,19 +4,24 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Zap, Shield, Clock } from "@/components/ui/Icons";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8002";
+// Real OAuth URLs that work from static frontend
+// These redirect to Google/GitHub auth and come back to /auth/callback
+const GOOGLE_AUTH_URL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=24703942746-k1n19h6fr5t1pm2rh53kflm8e6b53qio.apps.googleusercontent.com&redirect_uri=${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback&response_type=code&scope=email%20profile`;
+const GITHUB_AUTH_URL = `https://github.com/login/oauth/authorize?client_id=Ov23liRxVYCS1surSt30&redirect_uri=${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback&scope=user:email`;
 
 export default function TrialPage() {
   const [hasToken, setHasToken] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [baseUrl, setBaseUrl] = useState("");
 
   useEffect(() => {
+    setBaseUrl(window.location.origin);
+    
     const token = localStorage.getItem("ipmobi_trial_token");
     if (token) {
       setHasToken(true);
     }
 
-    // Check for error in URL params
     const params = new URLSearchParams(window.location.search);
     const err = params.get("error");
     if (err) {
@@ -36,11 +41,13 @@ export default function TrialPage() {
   }, []);
 
   const handleGoogleLogin = () => {
-    window.location.href = `${BACKEND_URL}/auth/google`;
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=24703942746-k1n19h6fr5t1pm2rh53kflm8e6b53qio.apps.googleusercontent.com&redirect_uri=${encodeURIComponent(callbackUrl)}&response_type=code&scope=email%20profile`;
   };
 
   const handleGithubLogin = () => {
-    window.location.href = `${BACKEND_URL}/auth/github`;
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=Ov23liRxVYCS1surSt30&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=user:email`;
   };
 
   if (hasToken) {
