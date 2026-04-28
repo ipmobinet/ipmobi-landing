@@ -2,6 +2,13 @@
 3x-ui API integration for the admin backend.
 Proxies data from the local 3x-ui panel and adds auth.
 """
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(env_path)
+
 import httpx
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
@@ -14,7 +21,7 @@ XUI_USER = "admin"
 XUI_PASS = "admin"
 
 # Simple admin auth - check for admin token
-ADMIN_TOKEN = "ipmobi-admin-secret-2026"
+ADMIN_TOKEN="ipmobi-admin-2026"
 
 async def _xui_login() -> httpx.AsyncClient:
     """Login to 3x-ui and return authenticated client"""
@@ -26,6 +33,16 @@ async def _xui_login() -> httpx.AsyncClient:
     if not data.get("success"):
         raise HTTPException(500, f"3x-ui login failed: {data.get('msg')}")
     return client
+
+
+@router.post("/verify")
+async def verify_admin_password(data: dict):
+    """Verify admin password - returns 200 if correct"""
+    pwd = data.get("password", "")
+    expected = os.getenv("ADMIN_PASSWORD", "changeme")
+    if pwd == expected:
+        return {"status": "ok"}
+    raise HTTPException(403, "Invalid admin password")
 
 async def verify_admin(authorization: str = Header(None)):
     if not authorization:
