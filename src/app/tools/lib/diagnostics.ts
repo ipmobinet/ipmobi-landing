@@ -80,19 +80,20 @@ export async function checkIP(): Promise<IPInfo> {
         };
       } else {
         const data = await resp.json();
+        // ipify only returns IP, other fields unknown
         return {
-          ip: data.ip, isp: 'IPMobi Network', asn: 'AS4788',
-          city: 'Shah Alam', country: 'Malaysia', proxy: false, vpn: false,
-          tor: false, hosting: false, mobile: true, riskScore: 0,
-          connectionType: 'Mobile 5G', org: 'IPMobi', lat: 3.0, lon: 101.5,
+          ip: String(data.ip || ''), isp: '', asn: '',
+          city: '', country: '', proxy: false, vpn: false,
+          tor: false, hosting: false, mobile: false, riskScore: -1,
+          connectionType: '', org: '', lat: 0, lon: 0,
         };
       }
     } catch { continue; }
   }
   return {
     ip: 'Unable to detect', isp: 'N/A', asn: 'N/A', city: 'N/A', country: 'N/A',
-    proxy: false, vpn: false, tor: false, hosting: false, mobile: true,
-    riskScore: 0, connectionType: 'Unknown', org: 'N/A', lat: 0, lon: 0,
+    proxy: false, vpn: false, tor: false, hosting: false, mobile: false,
+    riskScore: -1, connectionType: 'N/A', org: 'N/A', lat: 0, lon: 0,
   };
 }
 // WebRTC Leak Test — uses RTCPeerConnection with STUN servers
