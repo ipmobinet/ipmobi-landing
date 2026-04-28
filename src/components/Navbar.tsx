@@ -12,12 +12,12 @@ const locales: { code: Locale; label: string }[] = [
   { code: "ru", label: "RU" },
 ];
 
-const navLinks: { key: string; href: string }[] = [
+const navLinks: { key: string; href: string; label?: string }[] = [
   { key: "navUseCases", href: "#usecases" },
   { key: "navInfra", href: "#infrastructure" },
   { key: "navAPI", href: "#developers" },
   { key: "navPricing", href: "#pricing" },
-  { key: "Tools", href: "/tools" },
+  { key: "", href: "/tools", label: "Tools" },
   { key: "navTrial", href: "/trial" },
 ];
 
@@ -71,7 +71,7 @@ export default function Navbar() {
               href={link.href}
               className="text-sm text-slate-400 hover:text-white transition-colors"
             >
-              {t(link.key as any)}
+              {link.label || t(link.key as any)}
             </a>
           ))}
         </div>
