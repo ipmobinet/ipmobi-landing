@@ -159,33 +159,7 @@ export default function TrialPage() {
             Sign in with GitHub
           </button>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-surface-border" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-[#030712] px-4 text-slate-500">or</span>
-            </div>
-          </div>
 
-          <button
-            onClick={() => {
-              const mockToken = "trial_" + Math.random().toString(36).substring(2, 15);
-              localStorage.setItem("ipmobi_trial_token", mockToken);
-              localStorage.setItem("ipmobi_trial_proxy", JSON.stringify({
-                host: "gw.ipmobi.net", port: 10000 + Math.floor(Math.random() * 1000),
-                username: "trial_" + Math.random().toString(36).substring(2, 8),
-                password: Math.random().toString(36).substring(2, 12),
-                bytesUsed: 0, bytesLimit: 104857600,
-                startedAt: Date.now(), expiresAt: Date.now() + 15 * 60 * 1000,
-              }));
-              window.location.href = "/trial/active";
-            }}
-            className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 font-medium transition-all border border-emerald-500/30 shadow-lg"
-          >
-            <Zap size={20} />
-            Direct Trial (No Login)
-          </button>
         </div>
 
         {/* Back Link */}

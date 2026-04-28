@@ -147,6 +147,19 @@ export default function Navbar() {
             {t("clientPortal")}
           </Link>
 
+          {/* Logout */}
+          <button
+            onClick={() => {
+              localStorage.removeItem("ipmobi_trial_token");
+              localStorage.removeItem("ipmobi_trial_proxy");
+              localStorage.removeItem("ipmobi_admin_auth");
+              window.location.href = "/";
+            }}
+            className="text-sm text-red-400/70 hover:text-red-400 transition-colors"
+          >
+            Logout
+          </button>
+
           {/* Order Port */}
           <a
             href="#pricing"
