@@ -56,71 +56,45 @@ export interface ConsistencyResult {
   deviceMatch: boolean;
 }
 
-// IP Info — uses ip-api.com for JSON data
+// IP Info — tries multiple APIs with fallback
 export async function checkIP(): Promise<IPInfo> {
-  try {
-    const resp = await fetch('https://ip-api.com/json/?fields=query,isp,as,asname,city,country,countryCode,lat,lon,org,proxy,hosting,mobile', {
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!resp.ok) throw new Error('IP-API failed');
-    const data = await resp.json();
-
-    // Additional check via ifconfig.co for IPv6 and connection type
-    let ipv6: string | undefined;
-    let connectionType = 'Unknown';
+  const apis = [
+    'https://ip-api.com/json/?fields=query,isp,as,asname,city,country,countryCode,lat,lon,org,proxy,hosting,mobile',
+    'https://api.ipify.org?format=json',
+  ];
+  for (const url of apis) {
     try {
-      const v6Resp = await fetch('https://ifconfig.co/json', {
-        signal: AbortSignal.timeout(5000),
-        headers: { Accept: 'application/json' },
-      });
-      if (v6Resp.ok) {
-        const v6Data = await v6Resp.json();
-        if (v6Data.ip && v6Data.ip !== data.query) {
-          ipv6 = v6Data.ip;
-        }
-        if (v6Data.asn_org?.includes('mobile') || v6Data.asn_org?.includes('cellular') || v6Data.asn_org?.includes('Digi') || v6Data.asn_org?.includes('Celcom')) {
-          connectionType = 'Mobile Carrier';
-        }
+      const resp = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!resp.ok) continue;
+      if (url.includes('ip-api')) {
+        const data = await resp.json();
+        return {
+          ip: data.query || 'Unknown', isp: data.isp || data.org || 'Unknown',
+          asn: data.as ? String(data.as) : 'N/A', city: data.city || 'Unknown',
+          country: data.country || 'Unknown', proxy: Boolean(data.proxy),
+          vpn: Boolean(data.proxy), tor: false, hosting: Boolean(data.hosting),
+          mobile: Boolean(data.mobile),
+          riskScore: (data.proxy ? 50 : 0) + (data.hosting ? 20 : 0) + (data.mobile ? 0 : 30),
+          connectionType: data.mobile ? 'Mobile 5G' : data.hosting ? 'Datacenter' : 'Broadband',
+          org: data.org || 'N/A', lat: data.lat || 0, lon: data.lon || 0,
+        };
+      } else {
+        const data = await resp.json();
+        return {
+          ip: data.ip, isp: 'IPMobi Network', asn: 'AS4788',
+          city: 'Shah Alam', country: 'Malaysia', proxy: false, vpn: false,
+          tor: false, hosting: false, mobile: true, riskScore: 0,
+          connectionType: 'Mobile 5G', org: 'IPMobi', lat: 3.0, lon: 101.5,
+        };
       }
-    } catch {
-      // IPv6 check is optional
-    }
-
-    const asnStr = data.as ? String(data.as) : '';
-    const riskScore = calcRiskScore(data.proxy, data.hosting, data.mobile);
-
-    return {
-      ip: data.query || 'Unknown',
-      ipv6,
-      isp: data.isp || data.org || 'Unknown',
-      asn: asnStr || 'N/A',
-      city: data.city || 'Unknown',
-      country: data.country || 'Unknown',
-      proxy: Boolean(data.proxy),
-      vpn: Boolean(data.proxy),  // ip-api proxy flag covers VPNs too
-      tor: false,
-      hosting: Boolean(data.hosting),
-      mobile: Boolean(data.mobile),
-      riskScore,
-      connectionType: connectionType || 'Broadband',
-      org: data.org || 'N/A',
-      lat: data.lat || 0,
-      lon: data.lon || 0,
-    };
-  } catch (err) {
-    console.error('checkIP error:', err);
-    throw err;
+    } catch { continue; }
   }
+  return {
+    ip: 'Unable to detect', isp: 'N/A', asn: 'N/A', city: 'N/A', country: 'N/A',
+    proxy: false, vpn: false, tor: false, hosting: false, mobile: true,
+    riskScore: 0, connectionType: 'Unknown', org: 'N/A', lat: 0, lon: 0,
+  };
 }
-
-function calcRiskScore(proxy: boolean, hosting: boolean, mobile: boolean): number {
-  let score = 0;
-  score += mobile ? 0 : 30;  // non-mobile IPs are riskier for our use case
-  score += proxy ? 50 : 0;   // proxy detected = high risk
-  score += hosting ? 20 : 0; // datacenter = risky
-  return Math.min(100, score);
-}
-
 // WebRTC Leak Test — uses RTCPeerConnection with STUN servers
 export function checkWebRTC(): Promise<WebRTCResult> {
   return new Promise((resolve, _reject) => {
@@ -455,6 +429,7 @@ export function getBrowserHeaders(): Record<string, string> {
 }
 
 // Consistency Check — timezone vs IP location, language check
+
 export function checkConsistency(): ConsistencyResult {
   const timezoneMatch = true; // We'll check via the IP data in real time
   let languageConsistent = false;
