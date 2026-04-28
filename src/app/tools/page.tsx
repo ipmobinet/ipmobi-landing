@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import {
   Globe, Shield, Terminal, Code, Lock, Activity, Zap, Server,
   CheckCircle2, ExternalLink
@@ -203,7 +201,6 @@ export default function ToolsPage() {
 
   return (
     <>
-      <Navbar />
       <main className="pt-24 pb-20 min-h-screen bg-[#030712]">
         <div className="max-w-7xl mx-auto px-6">
           {/* Header */}
@@ -455,7 +452,6 @@ export default function ToolsPage() {
           </div>
         </div>
       </main>
-      <Footer />
     </>
   );
 }
