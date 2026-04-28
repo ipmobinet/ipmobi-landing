@@ -7,3 +7,5 @@ backend/*.db
 .env.local
 *.pyc
 .DS_Store
+
+out/
