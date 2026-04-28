@@ -25,10 +25,10 @@ const locales: { code: Locale; label: string }[] = [
 ];
 
 const navLinks: { key: string; href: string; label?: string; sublinks?: { label: string; href: string }[] }[] = [
-  { key: "navUseCases", href: "#usecases" },
-  { key: "navInfra", href: "#infrastructure" },
-  { key: "navAPI", href: "#developers" },
-  { key: "navPricing", href: "#pricing" },
+  { key: "navUseCases", href: "/#usecases" },
+  { key: "navInfra", href: "/#infrastructure" },
+  { key: "navAPI", href: "/#developers" },
+  { key: "navPricing", href: "/#pricing" },
   { key: "", href: "/tools", label: "Tools",
     sublinks: [
       { label: "IP Detective", href: "/tools" },
