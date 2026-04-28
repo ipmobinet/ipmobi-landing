@@ -10,6 +10,7 @@ export default function AuthCallbackPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    const run = async () => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     const error = params.get("error");
@@ -74,6 +75,8 @@ export default function AuthCallbackPage() {
     setStatus("success");
     setMessage("Trial activated! (Demo mode)");
     setTimeout(() => router.push("/trial/active"), 1500);
+    };
+    run();
   }, [router]);
 
   return (
