@@ -17,6 +17,7 @@ const navLinks: { key: string; href: string }[] = [
   { key: "navInfra", href: "#infrastructure" },
   { key: "navAPI", href: "#developers" },
   { key: "navPricing", href: "#pricing" },
+  { key: "Tools", href: "/tools" },
   { key: "navTrial", href: "/trial" },
 ];
 
