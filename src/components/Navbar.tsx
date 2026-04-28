@@ -12,12 +12,20 @@ const locales: { code: Locale; label: string }[] = [
   { code: "ru", label: "RU" },
 ];
 
-const navLinks: { key: string; href: string; label?: string }[] = [
+const navLinks: { key: string; href: string; label?: string; sublinks?: { label: string; href: string }[] }[] = [
   { key: "navUseCases", href: "#usecases" },
   { key: "navInfra", href: "#infrastructure" },
   { key: "navAPI", href: "#developers" },
   { key: "navPricing", href: "#pricing" },
-  { key: "", href: "/tools", label: "Tools" },
+  { key: "", href: "/tools", label: "Tools",
+    sublinks: [
+      { label: "IP Detective", href: "/tools" },
+      { label: "WebRTC Leak Test", href: "/tools" },
+      { label: "DNS Leak Test", href: "/tools" },
+      { label: "IP Reputation", href: "/tools" },
+      { label: "Browser Fingerprint", href: "/tools" },
+    ]
+  },
   { key: "navTrial", href: "/trial" },
 ];
 
