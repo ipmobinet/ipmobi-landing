@@ -26,8 +26,15 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const authed = localStorage.getItem("ipmobi_admin_auth");
+    if (authed !== "true" && pathname !== "/admin") {
+      router.push("/admin");
+    }
+  }, [pathname, router]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isActive = (href: string) => {
