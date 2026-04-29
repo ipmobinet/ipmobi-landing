@@ -18,6 +18,27 @@ async def handle_telegram_webhook(data: dict):
     if chat_id == YOUR_CHAT_ID:
         return {"ok": True}
     
+    # Check if this is YOUR reply to a customer
+    if chat_id == YOUR_CHAT_ID:
+        # You replied. Check if it's to a specific web visitor
+        if text.startswith("/reply "):
+            parts = text.split(" ", 2)
+            if len(parts) >= 3:
+                target_chat = parts[1]
+                reply_text = parts[2]
+                # Save the reply for the widget to pick up
+                import json, os
+                reply_file = f"/tmp/chat_replies_{target_chat}.json"
+                msgs = []
+                if os.path.exists(reply_file):
+                    with open(reply_file) as f:
+                        msgs = json.load(f)
+                msgs.append({"text": reply_text, "from": "them", "time": str(__import__('datetime').datetime.now())})
+                with open(reply_file, "w") as f:
+                    json.dump(msgs, f)
+                send_telegram(YOUR_CHAT_ID, f"✅ Reply sent to {target_chat}")
+                return {"ok": True}
+    
     # Forward to you
     forward = f"📩 <b>New Message</b>\nFrom: {from_name}\nChat: {chat_id}\n\n{text}"
     send_telegram(YOUR_CHAT_ID, forward, "HTML")

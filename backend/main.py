@@ -55,6 +55,18 @@ app.include_router(admin_router)
 
 
 # ── Order endpoint ───────────────────────────────────────────
+@app.get("/api/chat/{chat_id}")
+async def get_chat_messages(chat_id: str):
+    """Get reply messages for a chat session."""
+    import json, os
+    msgs = []
+    reply_file = f"/tmp/chat_replies_{chat_id}.json"
+    if os.path.exists(reply_file):
+        with open(reply_file) as f:
+            msgs = json.load(f)
+    return {"messages": msgs}
+
+
 @app.post("/api/chat")
 async def receive_chat(data: dict):
     """Receive live chat message from website and forward to Telegram."""
