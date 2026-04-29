@@ -1,277 +1,220 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Server, Activity, XCircle, CheckCircle2, Shield, ChevronRight, Globe, Users, ArrowLeft, Terminal, Clock, Copy, Zap, ExternalLink, Wifi } from "@/components/ui/Icons";
+import { Server, Activity, XCircle, CheckCircle2, Shield, ChevronRight, Globe, Users as UsersIcon, ArrowLeft, Terminal, Clock, Copy, Zap, ExternalLink, Wifi } from "@/components/ui/Icons";
 
-interface User {
+interface TrialInfo {
+  status: string | null;
+  started_at: string | null;
+  expires_at: string | null;
+  proxy_port: number | null;
+  bytes_used: number;
+}
+
+interface UserRecord {
   id: number;
   email: string;
-  provider: "Google" | "GitHub" | "Email";
-  createdAt: string;
-  status: "Active" | "Blocked";
-  trials: number;
-  bandwidthUsed: string;
-  lastActivity: string;
+  name: string;
+  provider: string;
+  provider_id: string;
+  created_at: string | null;
+  is_blocked: boolean;
+  trial_count: number;
+  latest_trial: TrialInfo | null;
 }
 
-interface TrialDetail {
-  id: number;
-  port: string;
-  startedAt: string;
-  expiresAt: string;
-  bandwidthUsed: string;
-}
+const formatBytes = (bytes: number) => {
+  if (!bytes) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+};
+
+const formatDate = (ts: string | null) => {
+  if (!ts) return "N/A";
+  return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+};
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Blocked">("All");
+  const [filter, setFilter] = useState<"all" | "active" | "blocked">("all");
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    const stored = localStorage.getItem("ipmobi_admin_users");
-    if (stored) {
-      try {
-        setUsers(JSON.parse(stored));
-        return;
-      } catch {}
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const resp = await fetch("https://api.ipmobi.net/api/admin/users", {
+        headers: { "Authorization": "Bearer ipmobi-admin-2026" },
+      });
+      if (!resp.ok) throw new Error("Failed to fetch users");
+      const data = await resp.json();
+      setUsers(data.users || []);
+    } catch (e: any) {
+      setError(e.message || "Could not load users");
     }
+    setLoading(false);
+  };
 
-    const defaultUsers: User[] = [
-      { id: 1, email: "alex@example.com", provider: "Google", createdAt: "2026-04-20", status: "Active", trials: 2, bandwidthUsed: "12.4 GB", lastActivity: "2 min ago" },
-      { id: 2, email: "jane@corp.net", provider: "GitHub", createdAt: "2026-04-18", status: "Active", trials: 1, bandwidthUsed: "847 MB", lastActivity: "1 hour ago" },
-      { id: 3, email: "test@spam.com", provider: "Email", createdAt: "2026-04-15", status: "Blocked", trials: 5, bandwidthUsed: "0 B", lastActivity: "3 days ago" },
-      { id: 4, email: "bob@enterprise.com", provider: "Google", createdAt: "2026-04-10", status: "Active", trials: 3, bandwidthUsed: "45.2 GB", lastActivity: "30 min ago" },
-      { id: 5, email: "abuse@example.com", provider: "GitHub", createdAt: "2026-04-08", status: "Blocked", trials: 8, bandwidthUsed: "2.1 GB", lastActivity: "1 week ago" },
-      { id: 6, email: "client@corp.com", provider: "Email", createdAt: "2026-04-05", status: "Active", trials: 1, bandwidthUsed: "5.7 GB", lastActivity: "4 hours ago" },
-      { id: 7, email: "sarah@dev.io", provider: "Google", createdAt: "2026-04-01", status: "Active", trials: 2, bandwidthUsed: "22.1 GB", lastActivity: "1 day ago" },
-      { id: 8, email: "malicious@bad.net", provider: "GitHub", createdAt: "2026-03-28", status: "Blocked", trials: 12, bandwidthUsed: "389 MB", lastActivity: "2 weeks ago" },
-    ];
-    setUsers(defaultUsers);
-    localStorage.setItem("ipmobi_admin_users", JSON.stringify(defaultUsers));
-  }, []);
+  useEffect(() => { fetchUsers(); }, []);
 
-  const filteredUsers = users.filter((u) => {
-    const matchesSearch = u.email.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "All" || u.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const handleUnbind = async (userId: number) => {
+    if (!confirm("Unbind this user? They will be able to start a new trial.")) return;
+    try {
+      const resp = await fetch(`https://api.ipmobi.net/api/admin/users/${userId}/unbind`, {
+        method: "POST",
+        headers: { "Authorization": "Bearer ipmobi-admin-2026" },
+      });
+      if (resp.ok) {
+        alert("User unbound successfully");
+        fetchUsers();
+      }
+    } catch { alert("Failed to unbind user"); }
+  };
+
+  const handleBlock = async (userId: number) => {
+    try {
+      const resp = await fetch(`https://api.ipmobi.net/api/admin/users/${userId}/block`, {
+        method: "POST",
+        headers: { "Authorization": "Bearer ipmobi-admin-2026" },
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        alert(data.blocked ? "User blocked" : "User unblocked");
+        fetchUsers();
+      }
+    } catch { alert("Failed"); }
+  };
+
+  const filtered = users.filter((u) => {
+    const matchSearch = u.email.toLowerCase().includes(search.toLowerCase()) || u.name.toLowerCase().includes(search.toLowerCase());
+    if (filter === "active") return matchSearch && !u.is_blocked;
+    if (filter === "blocked") return matchSearch && u.is_blocked;
+    return matchSearch;
   });
 
-  const toggleBlock = (id: number) => {
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id === id) {
-          const newStatus = u.status === "Active" ? "Blocked" : "Active";
-          return { ...u, status: newStatus as "Active" | "Blocked" };
-        }
-        return u;
-      })
-    );
-  };
-
-  const getTrialDetails = (userId: number): TrialDetail[] => {
-    const trials: Record<number, TrialDetail[]> = {
-      1: [
-        { id: 1, port: "modem-01:8080", startedAt: "2026-04-20 10:30", expiresAt: "2026-04-21 10:30", bandwidthUsed: "847 MB" },
-        { id: 2, port: "modem-03:8082", startedAt: "2026-04-22 14:00", expiresAt: "2026-04-23 14:00", bandwidthUsed: "1.2 GB" },
-      ],
-      4: [
-        { id: 3, port: "modem-05:8084", startedAt: "2026-04-10 09:00", expiresAt: "2026-04-11 09:00", bandwidthUsed: "2.4 GB" },
-      ],
-    };
-    return trials[userId] || [];
-  };
-
-  const providerColors: Record<string, string> = {
-    Google: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    GitHub: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-    Email: "bg-slate-500/10 text-slate-400 border-slate-500/20",
-  };
-
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
+    <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-white">User Management</h2>
-          <p className="text-sm text-slate-400 mt-1">
-            Manage all registered users, block abusive accounts, and review activity.
-          </p>
+          <p className="text-sm text-slate-400 mt-1">View, block, or unbind users</p>
         </div>
-        <div className="text-sm text-slate-500">
-          {users.length} total users
-        </div>
+        <button onClick={fetchUsers} className="px-4 py-2 rounded-lg bg-white/5 text-slate-300 text-sm hover:bg-white/10 transition-all">
+          Refresh
+        </button>
       </div>
 
-      {/* Search + Filter */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Activity size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search by email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white/[0.03] border border-surface-border text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all"
-          />
-        </div>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <input
+          type="text"
+          placeholder="Search by email or name..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50"
+        />
         <div className="flex gap-2">
-          {(["All", "Active", "Blocked"] as const).map((f) => (
+          {(["all", "active", "blocked"] as const).map((f) => (
             <button
               key={f}
-              onClick={() => setStatusFilter(f)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                statusFilter === f
-                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                  : "text-slate-400 hover:text-white border border-transparent"
+              onClick={() => setFilter(f)}
+              className={`px-4 py-2 rounded-lg text-sm border transition-all ${
+                filter === f ? "border-emerald-500 bg-emerald-500/10 text-emerald-400" : "border-white/10 text-slate-400 hover:text-white"
               }`}
             >
-              {f}
+              {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="rounded-xl border border-surface-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-white/[0.02] border-b border-surface-border">
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">ID</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Provider</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Created</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-border">
-              {filteredUsers.map((user) => (
-                <>
-                  <tr
-                    key={user.id}
-                    onClick={() => setExpandedId(expandedId === user.id ? null : user.id)}
-                    className="hover:bg-white/[0.02] transition-colors cursor-pointer"
-                  >
-                    <td className="px-4 py-3 text-sm text-slate-400">#{user.id}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xs font-medium">
-                          {user.email.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="text-sm text-white">{user.email}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${providerColors[user.provider] || providerColors.Email}`}>
-                        {user.provider}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{user.createdAt}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                          user.status === "Active"
-                            ? "bg-emerald-500/10 text-emerald-400"
-                            : "bg-red-500/10 text-red-400"
-                        }`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${user.status === "Active" ? "bg-emerald-500" : "bg-red-500"}`} />
-                        {user.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => toggleBlock(user.id)}
-                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                            user.status === "Active"
-                              ? "bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20"
-                              : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20"
-                          }`}
-                        >
-                          {user.status === "Active" ? (
-                            <><XCircle size={12} /> Block</>
-                          ) : (
-                            <><CheckCircle2 size={12} /> Unblock</>
-                          )}
-                        </button>
-                        <ChevronRight
-                          size={16}
-                          className={`text-slate-500 transition-transform ${
-                            expandedId === user.id ? "rotate-90" : ""
-                          }`}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                  {expandedId === user.id && (
-                    <tr key={`${user.id}-expanded`}>
-                      <td colSpan={6} className="px-4 py-4 bg-white/[0.01]">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                          <div className="p-3 rounded-lg bg-white/[0.02] border border-surface-border">
-                            <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                              <Activity size={12} />
-                              Trials Used
-                            </div>
-                            <span className="text-lg font-semibold text-white">{user.trials}</span>
-                          </div>
-                          <div className="p-3 rounded-lg bg-white/[0.02] border border-surface-border">
-                            <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                              <Zap size={12} />
-                              Bandwidth Used
-                            </div>
-                            <span className="text-lg font-semibold text-white">{user.bandwidthUsed}</span>
-                          </div>
-                          <div className="p-3 rounded-lg bg-white/[0.02] border border-surface-border">
-                            <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                              <Clock size={12} />
-                              Last Activity
-                            </div>
-                            <span className="text-lg font-semibold text-white">{user.lastActivity}</span>
-                          </div>
-                        </div>
-
-                        {getTrialDetails(user.id).length > 0 && (
-                          <>
-                            <h4 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Trial History</h4>
-                            <div className="space-y-2">
-                              {getTrialDetails(user.id).map((trial) => (
-                                <div
-                                  key={trial.id}
-                                  className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-surface-border text-sm"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <Server size={14} className="text-slate-500" />
-                                    <span className="text-white">{trial.port}</span>
-                                  </div>
-                                  <div className="flex items-center gap-4 text-xs text-slate-500">
-                                    <span>{trial.startedAt}</span>
-                                    <span>→</span>
-                                    <span>{trial.expiresAt}</span>
-                                    <span className="text-slate-400">{trial.bandwidthUsed}</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  )}
-                </>
-              ))}
-            </tbody>
-          </table>
+      {loading && (
+        <div className="text-center py-20">
+          <div className="animate-spin inline-block w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full mb-4" />
+          <p className="text-slate-400 text-sm">Loading users...</p>
         </div>
-        {filteredUsers.length === 0 && (
-          <div className="p-12 text-center">
-            <Users size={40} className="mx-auto text-slate-600 mb-3" />
-            <p className="text-sm text-slate-500">No users found matching your search.</p>
-          </div>
-        )}
-      </div>
+      )}
+
+      {error && (
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
+      )}
+
+      {!loading && !error && (
+        <div className="space-y-3">
+          <div className="text-xs text-slate-500 px-2">{filtered.length} user(s)</div>
+          {filtered.map((user) => (
+            <div key={user.id} className="rounded-xl bg-white/[0.03] border border-surface-border overflow-hidden">
+              <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full ${user.is_blocked ? "bg-red-500/20" : "bg-emerald-500/20"} flex items-center justify-center`}>
+                      <UsersIcon size={16} className={user.is_blocked ? "text-red-400" : "text-emerald-400"} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">{user.name}</p>
+                      <p className="text-xs text-slate-500">{user.email}</p>
+                    </div>
+                    {user.is_blocked && (
+                      <span className="px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs">Blocked</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 text-xs text-slate-500">
+                  <span>{user.provider}</span>
+                  <span>{user.trial_count} trial(s)</span>
+                  <span>{formatDate(user.created_at)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!user.is_blocked && (
+                    <button onClick={() => handleBlock(user.id)} className="px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 text-xs hover:bg-red-500/10 transition-all">
+                      Block
+                    </button>
+                  )}
+                  {user.is_blocked && (
+                    <button onClick={() => handleBlock(user.id)} className="px-3 py-1.5 rounded-lg border border-emerald-500/30 text-emerald-400 text-xs hover:bg-emerald-500/10 transition-all">
+                      Unblock
+                    </button>
+                  )}
+                  <button onClick={() => handleUnbind(user.id)} className="px-3 py-1.5 rounded-lg border border-amber-500/30 text-amber-400 text-xs hover:bg-amber-500/10 transition-all">
+                    Unbind
+                  </button>
+                  <button onClick={() => setExpandedId(expandedId === user.id ? null : user.id)} className="text-slate-500 hover:text-white">
+                    <ChevronRight size={16} className={`transition-transform ${expandedId === user.id ? "rotate-90" : ""}`} />
+                  </button>
+                </div>
+              </div>
+
+              {expandedId === user.id && user.latest_trial && (
+                <div className="px-4 pb-4 border-t border-surface-border pt-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                    <div>
+                      <p className="text-slate-500 mb-1">Status</p>
+                      <p className="text-white">{user.latest_trial.status || "None"}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500 mb-1">Port</p>
+                      <p className="text-white">{user.latest_trial.proxy_port || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500 mb-1">Started</p>
+                      <p className="text-white">{formatDate(user.latest_trial.started_at)}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500 mb-1">Bandwidth</p>
+                      <p className="text-white">{formatBytes(user.latest_trial.bytes_used)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

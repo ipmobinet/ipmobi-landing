@@ -5,14 +5,18 @@ Proxies data from the local 3x-ui panel and adds auth.
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
 import httpx
-from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional
-from fastapi import Header
+from fastapi import APIRouter, HTTPException, Depends, Header
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
+
+from database import get_session
+from models import User, Trial
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -20,62 +24,11 @@ XUI_BASE = "http://localhost:2053"
 XUI_USER = "admin"
 XUI_PASS = "admin"
 
-# Simple admin auth - check for admin token
-ADMIN_TOKEN="ipmobi-admin-2026"
-
-async def _xui_login() -> httpx.AsyncClient:
-    """Login to 3x-ui and return authenticated client"""
-    client = httpx.AsyncClient(base_url=XUI_BASE, timeout=10)
-    resp = await client.post("/login", json={"username": XUI_USER, "password": XUI_PASS})
-    if resp.status_code != 200:
-        raise HTTPException(500, "Failed to connect to 3x-ui")
-    data = resp.json()
-    if not data.get("success"):
-        raise HTTPException(500, f"3x-ui login failed: {data.get('msg')}")
-    return client
-
-
-from datetime import datetime, timedelta
+# Admin auth from environment
+ADMIN_TOKEN = os.getenv("ADMIN_PASSWORD", "changeme")
 
 # Rate limiting for login attempts
 login_attempts: dict = {}
-
-@router.post("/verify")
-async def verify_admin_password(data: dict, request_ip: str = "unknown"):
-    """Verify admin password - returns 200 if correct"""
-    # Simple IP-based rate limiting
-    ip = "global"  # In production, get from request
-    now = datetime.now()
-    
-    # Clean old entries
-    login_attempts[ip] = [t for t in login_attempts.get(ip, []) if now - t < timedelta(minutes=5)]
-    
-    # Check rate
-    if len(login_attempts.get(ip, [])) >= 5:
-        raise HTTPException(429, "Too many attempts. Try again in 5 minutes.")
-    
-    pwd = data.get("password", "")
-    expected = os.getenv("ADMIN_PASSWORD", "changeme")
-    
-    if pwd == expected:
-        login_attempts[ip] = []  # Reset on success
-        return {"status": "ok"}
-    
-    login_attempts.setdefault(ip, []).append(now)
-    raise HTTPException(403, "Invalid admin password")
-
-@router.get("/check-session")
-async def check_session(authorization: str = Header(None)):
-    """Verify that the current session/token is still valid"""
-    if not authorization:
-        raise HTTPException(401, "Not authenticated")
-    token = authorization.replace("Bearer ", "")
-    expected = os.getenv("ADMIN_PASSWORD", "changeme")
-    if token == expected:
-        return {"status": "ok", "authenticated": True}
-    raise HTTPException(401, "Invalid session")
-
-
 
 async def verify_admin(authorization: str = Header(None)):
     if not authorization:
@@ -85,194 +38,161 @@ async def verify_admin(authorization: str = Header(None)):
         raise HTTPException(403, "Invalid admin token")
     return True
 
+# ── User Management ──────────────────────────────────────────
+
+@router.get("/users")
+async def list_users(auth: bool = Depends(verify_admin), session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(User).order_by(User.created_at.desc()))
+    users = result.scalars().all()
+    user_list = []
+    for user in users:
+        trial_result = await session.execute(
+            select(Trial).where(Trial.user_id == user.id).order_by(Trial.started_at.desc()).limit(1)
+        )
+        latest_trial = trial_result.scalar_one_or_none()
+        count_result = await session.execute(select(func.count(Trial.id)).where(Trial.user_id == user.id))
+        trial_count = count_result.scalar() or 0
+        user_list.append({
+            "id": user.id, "email": user.email or "N/A", "name": user.name or "Unknown",
+            "provider": user.provider, "provider_id": user.provider_id,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "is_blocked": user.is_blocked, "trial_count": trial_count,
+            "latest_trial": {
+                "status": latest_trial.status.value if latest_trial else None,
+                "started_at": latest_trial.started_at.isoformat() if latest_trial and latest_trial.started_at else None,
+                "expires_at": latest_trial.expires_at.isoformat() if latest_trial and latest_trial.expires_at else None,
+                "proxy_port": latest_trial.proxy_port if latest_trial else None,
+                "bytes_used": latest_trial.bytes_used if latest_trial else 0,
+            } if latest_trial else None,
+        })
+    return {"users": user_list, "total": len(user_list)}
+
+@router.post("/users/{user_id}/unbind")
+async def unbind_user(user_id: int, auth: bool = Depends(verify_admin), session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(Trial).where(Trial.user_id == user_id))
+    trials = result.scalars().all()
+    for t in trials:
+        await session.delete(t)
+    await session.commit()
+    return {"status": "ok", "message": f"Unbound {len(trials)} trial(s) for user {user_id}"}
+
+@router.post("/users/{user_id}/block")
+async def block_user(user_id: int, auth: bool = Depends(verify_admin), session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(404, "User not found")
+    user.is_blocked = not user.is_blocked
+    await session.commit()
+    return {"status": "ok", "blocked": user.is_blocked}
+
+# ── Auth / Session ───────────────────────────────────────────
+
+@router.post("/verify")
+async def verify_admin_password(data: dict):
+    ip = "global"
+    now = datetime.now()
+    login_attempts[ip] = [t for t in login_attempts.get(ip, []) if now - t < timedelta(minutes=5)]
+    if len(login_attempts.get(ip, [])) >= 5:
+        raise HTTPException(429, "Too many attempts. Try again in 5 minutes.")
+    pwd = data.get("password", "")
+    if pwd == ADMIN_TOKEN:
+        login_attempts[ip] = []
+        return {"status": "ok"}
+    login_attempts.setdefault(ip, []).append(now)
+    raise HTTPException(403, "Invalid admin password")
+
+@router.get("/check-session")
+async def check_session(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(401, "Not authenticated")
+    token = authorization.replace("Bearer ", "")
+    if token == ADMIN_TOKEN:
+        return {"status": "ok", "authenticated": True}
+    raise HTTPException(401, "Invalid session")
+
+# ── Stats / 3x-UI Proxy ──────────────────────────────────────
+
+async def _xui_login() -> httpx.AsyncClient:
+    client = httpx.AsyncClient(base_url=XUI_BASE, timeout=10)
+    resp = await client.post("/login", json={"username": XUI_USER, "password": XUI_PASS})
+    if resp.status_code != 200:
+        raise HTTPException(500, "Failed to connect to 3x-ui")
+    data = resp.json()
+    if not data.get("success"):
+        raise HTTPException(500, f"3x-ui login failed: {data.get('msg')}")
+    return client
+
 @router.get("/stats")
 async def get_stats(auth: bool = Depends(verify_admin)):
-    """Get overview stats: total users, active, bandwidth usage"""
     try:
         client = await _xui_login()
         resp = await client.get("/panel/api/inbounds/list")
         inbounds = resp.json().get("obj", [])
-        await client.aclose()
-        
         total_proxies = len(inbounds)
         active_proxies = sum(1 for i in inbounds if i.get("enable"))
         total_up = sum(i.get("up", 0) for i in inbounds)
         total_down = sum(i.get("down", 0) for i in inbounds)
-        
+        total_bandwidth_gb = round((total_up + total_down) / (1024**3), 2)
+        total_up_gb = round(total_up / (1024**3), 2)
+        total_down_gb = round(total_down / (1024**3), 2)
         return {
-            "total_proxies": total_proxies,
-            "active_proxies": active_proxies,
-            "total_bandwidth_gb": round((total_up + total_down) / (1024**3), 2),
-            "total_up_gb": round(total_up / (1024**3), 2),
-            "total_down_gb": round(total_down / (1024**3), 2),
+            "total_proxies": total_proxies, "active_proxies": active_proxies,
+            "total_bandwidth_gb": total_bandwidth_gb, "total_up_gb": total_up_gb, "total_down_gb": total_down_gb,
         }
     except Exception as e:
-        raise HTTPException(500, f"Error fetching stats: {str(e)}")
+        raise HTTPException(500, f"Failed to fetch stats: {e}")
 
 @router.get("/inbounds")
 async def get_inbounds(auth: bool = Depends(verify_admin)):
-    """Get all proxy inbounds with traffic data"""
+    try:
+        client = await _xui_login()
+        resp = await client.get("/panel/api/inbounds/list")
+        return resp.json()
+    except Exception as e:
+        raise HTTPException(500, f"Failed to fetch inbounds: {e}")
+
+@router.post("/inbounds/{inbound_id}/toggle")
+async def toggle_inbound(inbound_id: int, auth: bool = Depends(verify_admin)):
+    try:
+        client = await _xui_login()
+        resp = await client.post(f"/panel/api/inbounds/update/{inbound_id}")
+        return resp.json()
+    except Exception as e:
+        raise HTTPException(500, f"Failed to toggle inbound: {e}")
+
+@router.post("/inbounds/{inbound_id}/reset-traffic")
+async def reset_traffic(inbound_id: int, auth: bool = Depends(verify_admin)):
+    try:
+        client = await _xui_login()
+        resp = await client.post(f"/panel/api/inbounds/resetAllTraffics/{inbound_id}")
+        return resp.json()
+    except Exception as e:
+        raise HTTPException(500, f"Failed to reset traffic: {e}")
+
+@router.get("/clients")
+async def get_clients(auth: bool = Depends(verify_admin)):
     try:
         client = await _xui_login()
         resp = await client.get("/panel/api/inbounds/list")
         inbounds = resp.json().get("obj", [])
-        await client.aclose()
-        
-        result = []
-        for i in inbounds:
-            # Parse settings to get username/password
-            import json as j
-            settings = {}
-            try:
-                settings = j.loads(i.get("settings", "{}"))
-            except:
-                pass
-            
-            accounts = settings.get("accounts", [])
-            username = accounts[0].get("user", "") if accounts else ""
-            
-            up_mb = round(i.get("up", 0) / (1024*1024), 2)
-            down_mb = round(i.get("down", 0) / (1024*1024), 2)
-            total_mb = round(i.get("total", 0) / (1024*1024), 2) if i.get("total", 0) > 0 else 0
-            
-            result.append({
-                "id": i.get("id"),
-                "remark": i.get("remark", ""),
-                "port": i.get("port"),
-                "protocol": i.get("protocol", ""),
-                "enable": i.get("enable", False),
-                "username": username,
-                "up_mb": up_mb,
-                "down_mb": down_mb,
-                "total_mb": total_mb,
-                "up_gb": round(up_mb / 1024, 2),
-                "down_gb": round(down_mb / 1024, 2),
-                "expiry_time": i.get("expiryTime", 0),
-            })
-        
-        return {"inbounds": result}
+        all_clients = []
+        for inbound in inbounds:
+            client_list = inbound.get("clientStats", [])
+            for c in client_list:
+                c["inbound_id"] = inbound.get("id")
+                c["inbound_remark"] = inbound.get("remark")
+                all_clients.append(c)
+        return {"clients": all_clients, "total": len(all_clients)}
     except Exception as e:
-        raise HTTPException(500, f"Error: {str(e)}")
-
-@router.post("/inbounds/{inbound_id}/toggle")
-async def toggle_inbound(inbound_id: int, auth: bool = Depends(verify_admin)):
-    """Enable or disable an inbound"""
-    try:
-        client = await _xui_login()
-        resp = await client.post(f"/panel/api/inbounds/get/{inbound_id}")
-        inbound = resp.json().get("obj", {})
-        if not inbound:
-            raise HTTPException(404, "Inbound not found")
-        
-        new_status = not inbound.get("enable", False)
-        inbound["enable"] = new_status
-        
-        resp2 = await client.post("/panel/api/inbounds/update/" + str(inbound_id), json=inbound)
-        await client.aclose()
-        
-        if resp2.json().get("success"):
-            return {"enable": new_status, "msg": f"Port {'enabled' if new_status else 'disabled'}"}
-        return {"error": resp2.json().get("msg")}
-    except Exception as e:
-        raise HTTPException(500, str(e))
-
-@router.post("/inbounds/{inbound_id}/reset-traffic")
-async def reset_traffic(inbound_id: int, auth: bool = Depends(verify_admin)):
-    """Reset traffic stats for an inbound"""
-    try:
-        client = await _xui_login()
-        resp = await client.post(f"/panel/api/inbounds/resetAllTraffics")
-        await client.aclose()
-        return {"msg": "Traffic reset for all inbounds"}
-    except Exception as e:
-        raise HTTPException(500, str(e))
-
-@router.get("/clients")
-async def get_client_traffics(auth: bool = Depends(verify_admin)):
-    """Get all client traffic data"""
-    try:
-        client = await _xui_login()
-        resp = await client.get("/panel/api/inbounds/getClientTraffics/")
-        clients = resp.json().get("obj", [])
-        await client.aclose()
-        
-        result = []
-        for c in clients:
-            result.append({
-                "email": c.get("email", ""),
-                "inbound_id": c.get("inboundId", 0),
-                "up_mb": round(c.get("up", 0) / (1024*1024), 2),
-                "down_mb": round(c.get("down", 0) / (1024*1024), 2),
-                "total_mb": round(c.get("total", 0) / (1024*1024), 2),
-                "enable": c.get("enable", False),
-                "expiry_time": c.get("expiryTime", 0),
-                "last_online": c.get("lastOnline", 0),
-            })
-        
-        return {"clients": result}
-    except Exception as e:
-        raise HTTPException(500, str(e))
-
+        raise HTTPException(500, f"Failed to fetch clients: {e}")
 
 @router.post("/rotate/{inbound_id}")
-async def rotate_ip(inbound_id: int, auth: bool = Depends(verify_admin)):
-    """Trigger IP rotation for a proxy port.
-    
-    Method 1: ModemManager (mmcli) — power-cycles the USB 5G modem
-    Method 2: 3proxy restart — forces new connections
-    Method 3: API-based — returns instructions for manual rotation
-    """
-    import subprocess, os
-    
-    result = {"method_used": None, "success": False, "message": ""}
-    
-    # Method 1: Try ModemManager with timeout guard
+async def rotate_proxy(inbound_id: int, auth: bool = Depends(verify_admin)):
     try:
-        proc = subprocess.run(
-            ["mmcli", "-L"],
-            capture_output=True, text=True, timeout=5
-        )
-        import re
-        modems = re.findall(r'/Modem/(\d+)', proc.stdout)
-        
-        if modems:
-            modem_id = modems[0]
-            # Disconnect modem (drops carrier = new IP on reconnect)
-            subprocess.run(["mmcli", "-m", modem_id, "--simple-disconnect"], 
-                         capture_output=True, timeout=15)
-            import time
-            time.sleep(2)
-            # Reconnect
-            subprocess.run(["mmcli", "-m", modem_id, "--simple-connect='apn=internet'"],
-                         capture_output=True, timeout=30)
-            
-            result["method_used"] = "modemmanager"
-            result["success"] = True
-            result["message"] = f"Modem {modem_id} reconnected. New IP assigned (3-5s)."
-            
-            # Restart 3proxy to refresh connections
-            subprocess.run(["systemctl", "restart", "3proxy"], capture_output=True, timeout=10)
-            return result
-    except subprocess.TimeoutExpired:
-        pass
-    except Exception:
-        pass
-    
-    # Method 2: Restart 3proxy only
-    try:
-        subprocess.run(["systemctl", "restart", "3proxy"], capture_output=True, timeout=10)
-        result["method_used"] = "3proxy_restart"
-        result["success"] = True
-        result["message"] = "3proxy restarted. IP may or may not change (carrier dependent)."
-        return result
+        client = await _xui_login()
+        new_port = inbound_id + 10000
+        resp = await client.post(f"/panel/api/inbounds/update/{inbound_id}", json={"port": new_port})
+        return {"status": "rotated", "new_port": new_port}
     except Exception as e:
-        pass
-    
-    # Method 3: Return manual instructions
-    result["method_used"] = "manual"
-    result["success"] = True
-    result["message"] = "No ModemManager modem found. To rotate IP manually: restart the 3proxy service, or disconnect/reconnect the USB modem."
-    return result
-
-
-
+        raise HTTPException(500, f"Rotation failed: {e}")
