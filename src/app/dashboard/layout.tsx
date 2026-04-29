@@ -32,12 +32,12 @@ export default function DashboardLayout({
   const [hasTrial, setHasTrial] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("ipmobi_trial_token");
-    const proxy = localStorage.getItem("ipmobi_trial_proxy");
-    if (!token && !proxy) {
+    const token = localStorage.getItem("ipmobi_jwt_token");
+    if (!token) {
       router.push("/trial");
       return;
     }
+    const proxy = localStorage.getItem("ipmobi_trial_proxy");
     setHasTrial(true);
 
     // Try to extract user info from localStorage

@@ -44,13 +44,11 @@ export default function TrialPage() {
   }, []);
 
   const handleGoogleLogin = () => {
-    const callbackUrl = `${window.location.origin}/auth/callback`;
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=24703942746-k1n19h6fr5t1pm2rh53kflm8e6b53qio.apps.googleusercontent.com&redirect_uri=${encodeURIComponent(callbackUrl)}&response_type=code&scope=email%20profile`;
+    window.location.href = "https://api.ipmobi.net/auth/google";
   };
 
   const handleGithubLogin = () => {
-    const callbackUrl = `${window.location.origin}/auth/callback`;
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=Ov23liRxVYCS1surSt30&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=user:email`;
+    window.location.href = "https://api.ipmobi.net/auth/github";
   };
 
   if (hasToken) {
