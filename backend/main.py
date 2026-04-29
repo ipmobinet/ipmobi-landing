@@ -10,10 +10,22 @@ from routers.admin import router as admin_router
 from config import BACKEND_URL, FRONTEND_URL
 
 
+from telegram_webhook import handle_telegram_webhook, set_webhook, delete_webhook
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    # Set Telegram webhook to point to this backend
+    try:
+        set_webhook("https://api.ipmobi.net/telegram-webhook")
+    except Exception as e:
+        print(f"Telegram webhook setup failed: {e}")
     yield
+    # Clean up webhook on shutdown
+    try:
+        delete_webhook()
+    except:
+        pass
 
 
 app = FastAPI(
@@ -43,6 +55,30 @@ app.include_router(admin_router)
 
 
 # ── Order endpoint ───────────────────────────────────────────
+@app.post("/api/chat")
+async def receive_chat(data: dict):
+    """Receive live chat message from website and forward to Telegram."""
+    import urllib.request, json
+    
+    BOT_TOKEN = "8797136142:AAHFAO84qxUVR7EiaN9QTewty1obuIToRoQ"
+    YOUR_CHAT_ID = "103555577"
+    
+    chat_id = data.get("chat_id", "unknown")
+    message = data.get("message", "")
+    page = data.get("page", "")
+    
+    # Forward to you on Telegram
+    msg = f"💬 <b>Live Chat</b>\nFrom: Web Visitor ({chat_id})\nPage: {page}\n\n{message}"
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = json.dumps({"chat_id": YOUR_CHAT_ID, "text": msg, "parse_mode": "HTML"}).encode()
+    try:
+        urllib.request.urlopen(urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}), timeout=10)
+    except:
+        pass
+    
+    return {"ok": True, "chat_id": chat_id}
+
+
 @app.post("/api/order")
 async def receive_order(data: dict):
     """Receive new orders and log them."""
@@ -85,6 +121,16 @@ async def receive_order(data: dict):
     print(f"\n📦 NEW ORDER: {order['plan']} from {order['name']} <{order['email']}>")
     return {"status": "ok", "message": "Order received. We'll contact you within 24 hours."}
 
+
+@app.post("/telegram-webhook")
+async def telegram_webhook(data: dict):
+    """Telegram sends messages here. Instantly forwards to you."""
+    return await handle_telegram_webhook(data)
+
+@app.get("/telegram-webhook")
+async def telegram_webhook_get():
+    """Telegram webhook verification (GET request)."""
+    return {"status": "ok", "message": "Telegram webhook is active"}
 
 @app.get("/health")
 async def health():
