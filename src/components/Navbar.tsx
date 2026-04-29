@@ -38,7 +38,6 @@ const navLinks: { key: string; href: string; label?: string; sublinks?: { label:
       { label: "Browser Fingerprint", href: "/tools" },
     ]
   },
-  { key: "navTrial", href: "/trial" },
 ];
 
 export default function Navbar() {
