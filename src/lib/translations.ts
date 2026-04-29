@@ -102,7 +102,7 @@ export const dict: Record<Locale, TranslationDict> = {
     heroTitle2: "Infrastructure.",
     heroDesc:
       "Deploy dedicated mobile proxies with 1:1 physical modem mapping. Real carrier ASNs, zero VM overlap, and protocol-agnostic traffic routing from our Shah Alam data center.",
-    deployBtn: "Deploy Your Node",
+    deployBtn: "Client Portal",
     apiBtn: "API Access",
 
     // ---- Stats ----

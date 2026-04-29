@@ -161,7 +161,7 @@ export default function Navbar() {
 
           {/* Order Port */}
           <a
-            href="#pricing"
+            href="/trial"
             className="text-sm font-medium px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20"
           >
             {t("orderPort")}
@@ -229,7 +229,7 @@ export default function Navbar() {
           </div>
 
           <Link
-            href="/login"
+            href="/dashboard"
             onClick={() => setMobileOpen(false)}
             className="text-lg text-slate-400 hover:text-white transition-colors"
           >
@@ -237,7 +237,7 @@ export default function Navbar() {
           </Link>
 
           <a
-            href="#pricing"
+            href="/trial"
             onClick={() => setMobileOpen(false)}
             className="text-lg font-medium px-6 py-3 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20"
           >
