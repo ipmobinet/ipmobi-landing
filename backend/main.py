@@ -46,7 +46,11 @@ app.include_router(admin_router)
 @app.post("/api/order")
 async def receive_order(data: dict):
     """Receive new orders and log them."""
-    import json, datetime
+    import json, datetime, urllib.request
+    
+    BOT_TOKEN = "8797136142:AAHFAO84qxUVR7EiaN9QTewty1obuIToRoQ"
+    CHAT_ID = "103555577"
+    
     order = {
         "timestamp": datetime.datetime.now().isoformat(),
         "plan": data.get("plan", "unknown"),
@@ -55,10 +59,29 @@ async def receive_order(data: dict):
         "telegram": data.get("telegram", ""),
         "notes": data.get("notes", ""),
     }
+    
     # Log to file
     with open("/tmp/orders.log", "a") as f:
         f.write(json.dumps(order) + "\n")
-    # Also print to console (visible in uvicorn logs)
+    
+    # Send to Telegram
+    msg = f"📦 <b>NEW ORDER!</b>\n\n"
+    msg += f"Plan: {order['plan']}\n"
+    msg += f"Name: {order['name']}\n"
+    msg += f"Email: {order['email']}\n"
+    if order['telegram']:
+        msg += f"Telegram: {order['telegram']}\n"
+    if order['notes']:
+        msg += f"Notes: {order['notes']}\n"
+    msg += f"\nTime: {order['timestamp']}"
+    
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = json.dumps({"chat_id": CHAT_ID, "text": msg, "parse_mode": "HTML"}).encode()
+        urllib.request.urlopen(urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}), timeout=10)
+    except Exception as e:
+        print(f"Telegram notify failed: {e}")
+    
     print(f"\n📦 NEW ORDER: {order['plan']} from {order['name']} <{order['email']}>")
     return {"status": "ok", "message": "Order received. We'll contact you within 24 hours."}
 
