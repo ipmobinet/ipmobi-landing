@@ -92,7 +92,7 @@ export const dict: Record<Locale, TranslationDict> = {
     navAPI: "API",
     navPricing: "Pricing",
     clientPortal: "Client Portal",
-    orderPort: "Order Port",
+    orderPort: "Order Now",
     navTrial: "Free Trial",
     backHome: "Back Home",
 
@@ -189,7 +189,7 @@ export const dict: Record<Locale, TranslationDict> = {
     navAPI: "API",
     navPricing: "定价",
     clientPortal: "客户门户",
-    orderPort: "订购端口",
+    orderPort: "立即订购",
     navTrial: "免费试用",
     backHome: "返回首页",
 
@@ -283,7 +283,7 @@ export const dict: Record<Locale, TranslationDict> = {
     navAPI: "API",
     navPricing: "Цены",
     clientPortal: "Клиентский портал",
-    orderPort: "Заказать порт",
+    orderPort: "Заказать",
     navTrial: "Бесплатная пробная",
     backHome: "На главную",
 

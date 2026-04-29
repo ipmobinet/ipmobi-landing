@@ -42,6 +42,27 @@ app.include_router(trial_router)
 app.include_router(admin_router)
 
 
+# ── Order endpoint ───────────────────────────────────────────
+@app.post("/api/order")
+async def receive_order(data: dict):
+    """Receive new orders and log them."""
+    import json, datetime
+    order = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "plan": data.get("plan", "unknown"),
+        "name": data.get("name", ""),
+        "email": data.get("email", ""),
+        "telegram": data.get("telegram", ""),
+        "notes": data.get("notes", ""),
+    }
+    # Log to file
+    with open("/tmp/orders.log", "a") as f:
+        f.write(json.dumps(order) + "\n")
+    # Also print to console (visible in uvicorn logs)
+    print(f"\n📦 NEW ORDER: {order['plan']} from {order['name']} <{order['email']}>")
+    return {"status": "ok", "message": "Order received. We'll contact you within 24 hours."}
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "ipmobi-trial-api"}
