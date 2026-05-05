@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "IPMobi | Enterprise Malaysian Mobile Proxies",
     description:
-      "Deploy dedicated mobile proxies with 1:1 physical modem mapping. Real carrier ASNs, zero VM overlap. Malaysian 4G/5G proxy infrastructure from Shah Alam — API-driven IP rotation, unlimited bandwidth, physical hardware.",
+      "Malaysian 4G/5G proxy infrastructure from Shah Alam. Dedicated modems, real carrier ASNs, API rotation, unlimited bandwidth. Physical hardware, zero VM overlap.",
     url: "https://ipmobi.net",
     siteName: "IPMobi",
     locale: "en_US",
