@@ -8,7 +8,7 @@ import LiveChatWidget from "@/components/LiveChatWidget";
 export const metadata: Metadata = {
   title: "IPMobi | Enterprise Mobile Proxies",
   description:
-    "🇲🇾 Malaysian mobile proxy service from Shah Alam. Dedicated 4G/5G modems with real carrier SIMs (Maxis, Celcom, Digi). API-driven IP rotation, unlimited bandwidth, no sharing. Physical hardware proxy infrastructure for e-commerce, scraping, and social media automation.",
+    "Malaysian mobile proxy service from Shah Alam. Dedicated 4G/5G modems with real carrier SIMs (Maxis, Celcom, Digi). Unlimited bandwidth, API-driven IP rotation, zero sharing. Physical proxy infrastructure for e-commerce, scraping, and automation.",
   openGraph: {
     title: "IPMobi | Enterprise Malaysian Mobile Proxies",
     description:
