@@ -29,6 +29,7 @@ const navLinks: { key: string; href: string; label?: string; sublinks?: { label:
   { key: "navInfra", href: "/#infrastructure" },
   { key: "navAPI", href: "/#developers" },
   { key: "navPricing", href: "/#pricing" },
+  { key: "", href: "/blog", label: "Blog" },
   { key: "", href: "/tools", label: "Tools",
     sublinks: [
       { label: "IP Detective", href: "/tools" },
