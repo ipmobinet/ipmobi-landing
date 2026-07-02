@@ -17,6 +17,12 @@ export const metadata: Metadata = {
     siteName: "IPMobi",
     locale: "en_US",
     type: "website",
+    images: [{
+      url: "https://ipmobi.net/og-image.svg",
+      width: 1200,
+      height: 630,
+      alt: "IPMOBI — Raw Mobile IP Infrastructure",
+    }],
   },
   twitter: {
     card: "summary_large_image",

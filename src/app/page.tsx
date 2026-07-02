@@ -432,7 +432,7 @@ export default function Home() {
               </ul>
 
               <a
-                href="/trial"
+                href="/order"
                 className="block w-full text-center py-3 rounded-lg border border-surface-border text-slate-300 font-medium hover:border-emerald-500/50 hover:text-white transition-all"
               >
                 {t("prDeploy")}
@@ -499,7 +499,7 @@ export default function Home() {
               </ul>
 
               <a
-                href="/trial"
+                href="/order"
                 className="block w-full text-center py-3 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/25"
               >
                 {t("pr2Deploy")}

@@ -25,6 +25,8 @@ const dict: Record<string, Record<string, string>> = {
     section7Text: "Either party may terminate the agreement with 30 days written notice. We reserve the right to immediately terminate accounts that violate these terms. Upon termination, your ports will be deactivated and any remaining data will be deleted.",
     section8Title: "8. Governing Law",
     section8Text: "These terms are governed by the laws of Malaysia. Any disputes shall be resolved in the courts of Selangor, Malaysia.",
+    section9Title: "9. Logging & Data Retention",
+    section9Text: "To ensure service quality, prevent abuse, and comply with legal obligations, IPMobi logs connection metadata: connection timestamps, your real IP address, the assigned exit IP, destination IP and port, and total bytes transferred. We DO NOT log full URLs, page content, DNS queries, passwords, or personal communications. Connection metadata is retained for 90 days and is only disclosed to law enforcement with a valid Malaysian court order. By using our service, you consent to this logging.",
     contact: "For questions, contact",
     backHome: "← Back to Home",
   },
@@ -65,6 +67,7 @@ const sections = [
   { num: "6", titleKey: "section6Title", textKey: "section6Text" },
   { num: "7", titleKey: "section7Title", textKey: "section7Text" },
   { num: "8", titleKey: "section8Title", textKey: "section8Text" },
+  { num: "9", titleKey: "section9Title", textKey: "section9Text" },
 ];
 
 function T({ k }: { k: string }) {

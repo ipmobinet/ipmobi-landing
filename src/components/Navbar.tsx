@@ -45,6 +45,14 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    setHasSession(
+      !!localStorage.getItem("ipmobi_trial_token") ||
+      !!localStorage.getItem("ipmobi_admin_auth")
+    );
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -146,18 +154,28 @@ export default function Navbar() {
             {t("clientPortal")}
           </Link>
 
-          {/* Logout */}
-          <button
-            onClick={() => {
-              localStorage.removeItem("ipmobi_trial_token");
-              localStorage.removeItem("ipmobi_trial_proxy");
-              localStorage.removeItem("ipmobi_admin_auth");
-              window.location.href = "/";
-            }}
-            className="text-sm text-red-400/70 hover:text-red-400 transition-colors"
-          >
-            Logout
-          </button>
+          {/* Auth: Login / Logout */}
+          {hasSession ? (
+            <button
+              onClick={() => {
+                localStorage.removeItem("ipmobi_trial_token");
+                localStorage.removeItem("ipmobi_trial_proxy");
+                localStorage.removeItem("ipmobi_admin_auth");
+                setHasSession(false);
+                window.location.href = "/";
+              }}
+              className="text-sm text-red-400/70 hover:text-red-400 transition-colors"
+            >
+              Logout
+            </button>
+          ) : (
+            <Link
+              href="/trial"
+              className="text-sm text-slate-400 hover:text-white transition-colors"
+            >
+              Login
+            </Link>
+          )}
 
           {/* Order Port */}
           <a
