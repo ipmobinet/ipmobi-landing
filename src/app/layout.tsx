@@ -131,6 +131,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <head>
+        <link rel="alternate" type="application/rss+xml" title="IPMOBI Blog" href="/rss.xml" />
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-H94L3FLYC"></script>
         <script dangerouslySetInnerHTML={{__html: `
           window.dataLayer = window.dataLayer || [];
