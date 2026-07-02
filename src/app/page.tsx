@@ -122,6 +122,17 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Trust Strip */}
+      <div className="max-w-4xl mx-auto px-4 pb-20 text-center">
+        <div className="flex flex-wrap justify-center items-center gap-6 md:gap-12 text-slate-500 text-xs md:text-sm">
+          <span>🟢 Shah Alam DC</span>
+          <span>🔒 100% Dedicated Hardware</span>
+          <span>📡 24/7 Modem Monitoring</span>
+          <span>🇲🇾 Native MY Carrier IPs</span>
+          <span>∞ Unlimited Bandwidth</span>
+        </div>
+      </div>
+
       {/* ===== USE CASES SECTION ===== */}
       <section id="usecases" className="py-24 sm:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -267,6 +278,16 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* CTA Strip */}
+      <div className="max-w-3xl mx-auto px-4 pb-8 text-center">
+        <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20">
+          <p className="text-white font-semibold mb-3">Every port is a real physical modem in our Shah Alam rack.</p>
+          <a href="/order" className="text-sm font-medium px-6 py-2.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/25">
+            Deploy Your Node — from $49/mo →
+          </a>
+        </div>
+      </div>
 
       {/* ===== DEVELOPERS SECTION ===== */}
       <section id="developers" className="py-24 sm:py-32">
@@ -511,12 +532,42 @@ export default function Home() {
           <div className="text-center mt-16">
             <p className="text-slate-400 mb-2">{t("prEnt1")}</p>
             <a
-              href="mailto:enterprise@ipmobi.net"
+              href="https://t.me/IPMobiNetBot"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
             >
               {t("prEnt2")}
               <ArrowLeft className="rotate-180" size={16} />
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FAQ SECTION ===== */}
+      <section className="py-24 sm:py-32">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight mb-4">
+              Frequently Asked Questions
+            </h2>
+          </div>
+          <div className="space-y-4">
+            {[
+              { q: "What is a mobile proxy?", a: "A mobile proxy routes your traffic through a real 4G/5G mobile modem with a genuine carrier SIM card. Unlike datacenter proxies, mobile IPs come from real cellular networks (Maxis, Celcom, Digi in Malaysia) and are much harder for anti-bot systems to detect and block." },
+              { q: "How is IPMobi different?", a: "IPMobi uses dedicated physical 4G/5G modems — one modem per port. Your IP is never shared. We operate our own hardware in a Shah Alam data center. Most proxy services resell VMs or cloud IPs; we sell real Malaysian mobile infrastructure." },
+              { q: "Do you offer a free trial?", a: "Yes — 15 minutes with 100MB of bandwidth. No credit card required. Sign in with Google or GitHub to get instant access to a dedicated mobile proxy port." },
+              { q: "Which carriers do you use?", a: "Maxis, Celcom, and Digi SIM cards in our physical modems. Each modem gets a real carrier-assigned IP address with a native Malaysian ASN." },
+              { q: "Can I rotate my IP?", a: "Yes. Manual rotation is available on all plans. Automation Pro includes REST API-based automatic rotation that changes your IP in under 3 seconds." },
+            ].map((faq, i) => (
+              <details key={i} className="group p-6 rounded-xl bg-surface-card border border-surface-border hover:border-emerald-500/20 transition-all">
+                <summary className="cursor-pointer text-lg font-semibold text-white list-none flex items-center justify-between">
+                  {faq.q}
+                  <span className="text-emerald-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <p className="mt-4 text-slate-400 leading-relaxed">{faq.a}</p>
+              </details>
+            ))}
           </div>
         </div>
       </section>

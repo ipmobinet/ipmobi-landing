@@ -130,6 +130,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
+      <head>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-H94L3FLYC"></script>
+        <script dangerouslySetInnerHTML={{__html: `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-H94L3FLYC');
+        `}} />
+      </head>
       <body className="min-h-full flex flex-col bg-[#030712] text-slate-300">
         <LanguageProvider>
           <Navbar />

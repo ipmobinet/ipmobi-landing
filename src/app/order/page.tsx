@@ -7,7 +7,7 @@ const plans = [
   {
     id: "scraper",
     name: "Scraper Node",
-    price: 65,
+    price: 49,
     period: "month",
     subtitle: "For manual or low-frequency data extraction",
     features: [
@@ -23,7 +23,7 @@ const plans = [
   {
     id: "automation",
     name: "Automation Pro",
-    price: 130,
+    price: 89,
     period: "month",
     subtitle: "For dynamic scraping & account management",
     features: [
@@ -116,9 +116,12 @@ export default function OrderPage() {
       <main className="max-w-5xl mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-white mb-4">Order Your Proxy Port</h1>
-          <p className="text-slate-400 max-w-xl mx-auto">
+          <p className="text-slate-400 max-w-xl mx-auto mb-4">
             Select a plan. After ordering, we&apos;ll set up your dedicated modem and send you the connection details within 24 hours.
           </p>
+          <a href="/trial" className="inline-flex items-center gap-1 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
+            ⚡ Not sure? Try free for 15 minutes first →
+          </a>
         </div>
 
         {/* Plan Cards */}
