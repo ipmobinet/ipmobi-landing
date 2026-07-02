@@ -14,6 +14,13 @@ export const metadata: Metadata = {
 
 const posts = [
   {
+    slug: "mobile-vs-residential-proxy-sea",
+    title: "Mobile Proxy vs Residential Proxy — Which One for SEA Markets?",
+    excerpt: "Malaysia 4G/5G mobile proxy vs Singapore dual ISP residential proxy comparison. TikTok live, Shopee, ChatGPT — which proxy for which job?",
+    date: "July 2, 2026",
+    tags: ["comparison", "Singapore", "guide"],
+  },
+  {
     slug: "what-is-malaysian-mobile-proxy",
     title: "What Is a Malaysian Mobile Proxy? Complete Guide (2026)",
     excerpt: "Everything you need to know about Malaysian mobile proxies — how they work, why they beat datacenter proxies, and how to get started.",
