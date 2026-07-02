@@ -55,6 +55,27 @@ const posts = [
     date: "July 2, 2026",
     tags: ["comparison", "guide"],
   },
+  {
+    slug: "malaysia-mobile-proxy-guide-zh",
+    title: "马来西亚移动代理完整指南 (2026) — 中文",
+    excerpt: "什么是移动代理？为什么比数据中心代理更好？覆盖Maxis、CelcomDigi、Digi三大运营商。$49/月起。",
+    date: "2026年7月2日",
+    tags: ["中文", "入门指南"],
+  },
+  {
+    slug: "shopee-lazada-duozhanghao-zh",
+    title: "Shopee & Lazada 多账号防关联指南 — 中文",
+    excerpt: "如何在Shopee和Lazada管理多个卖家账号不被封？马来西亚4G移动代理提供独立IP。",
+    date: "2026年7月2日",
+    tags: ["中文", "Shopee", "Lazada"],
+  },
+  {
+    slug: "malaysia-web-scraping-zh",
+    title: "马来西亚网页数据采集完整指南 — 中文",
+    excerpt: "如何用马来西亚4G/5G移动代理进行网页数据采集？避免被封IP、突破反爬限制。含Python代码示例。",
+    date: "2026年7月2日",
+    tags: ["中文", "网页采集", "Python"],
+  },
 ];
 
 export default function BlogIndex() {
