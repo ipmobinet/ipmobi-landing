@@ -1,69 +1,198 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://ipmobi.net/</loc>
+    <loc>https://ipmobi.net</loc>
     <priority>1.0</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/tools/</loc>
+    <loc>https://ipmobi.net/blog</loc>
     <priority>0.8</priority>
-    <changefreq>monthly</changefreq>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/trial/</loc>
+    <loc>https://ipmobi.net/order</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/trial</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/tools</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/terms</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/privacy</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/login</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/dashboard</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/trial/active</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/dashboard/proxies</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/dashboard/bandwidth</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/dashboard/settings</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/dashboard/support</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/web-scraping-proxy-malaysia</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/shopee-proxy-malaysia</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/lazada-proxy-malaysia</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/tiktok-proxy-malaysia</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/instagram-proxy-malaysia</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/sneaker-proxy-malaysia</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/socks5-proxy-malaysia</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/residential-proxy-malaysia</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/cheap-proxy-malaysia</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/malaysian-mobile-proxy</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/blog/what-is-malaysian-mobile-proxy</loc>
     <priority>0.8</priority>
-    <changefreq>monthly</changefreq>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/trial/active/</loc>
-    <priority>0.3</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://ipmobi.net/blog/malaysia-proxy-web-scraping</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/login/</loc>
-    <priority>0.3</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://ipmobi.net/blog/malaysia-mobile-proxy-shopee-lazada-automation</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/terms/</loc>
-    <priority>0.5</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://ipmobi.net/blog/social-media-automation-proxy-malaysia</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/privacy/</loc>
-    <priority>0.5</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://ipmobi.net/blog/4g-proxy-shopee-lazada-malaysia</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/dashboard/</loc>
-    <priority>0.3</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://ipmobi.net/blog/malaysia-mobile-proxy-advantage</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/dashboard/proxies/</loc>
-    <priority>0.3</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://ipmobi.net/blog/mobile-vs-residential-proxy-sea</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/dashboard/bandwidth/</loc>
-    <priority>0.3</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://ipmobi.net/blog/cheap-malaysian-proxy</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/dashboard/settings/</loc>
-    <priority>0.3</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://ipmobi.net/blog/tiktok-proxy-malaysia-guide</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/dashboard/support/</loc>
-    <priority>0.3</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://ipmobi.net/blog/shopee-account-ban-avoid-zh</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://ipmobi.net/admin/</loc>
-    <priority>0.1</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://ipmobi.net/blog/malaysia-mobile-proxy-guide-zh</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/blog/malaysia-web-scraping-zh</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/blog/shopee-lazada-duozhanghao-zh</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/blog/what-is-malaysian-mobile-proxy-zh</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://ipmobi.net/blog/shopee-lazada-proxy-zh</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
   </url>
 </urlset>
