@@ -21,6 +21,27 @@ const posts = [
     tags: ["comparison", "Singapore", "guide"],
   },
   {
+    slug: "cheap-malaysian-proxy",
+    title: "Cheap Malaysian Proxy — $49/mo Dedicated 4G/5G Mobile IP",
+    excerpt: "Malaysia's cheapest dedicated mobile proxy. Real carrier IPs, unlimited bandwidth. Compare vs BrightData ($500+), Oxylabs ($300+).",
+    date: "July 2, 2026",
+    tags: ["pricing", "comparison"],
+  },
+  {
+    slug: "tiktok-proxy-malaysia-guide",
+    title: "Best Proxy for TikTok Malaysia — 4G/5G Mobile IPs That Work",
+    excerpt: "Avoid TikTok shadowbans with Malaysian 4G/5G mobile proxies. Setup guide with Playwright code example.",
+    date: "July 2, 2026",
+    tags: ["TikTok", "social media", "guide"],
+  },
+  {
+    slug: "shopee-account-ban-avoid-zh",
+    title: "Shopee账号被封怎么办？马来西亚卖家防封终极指南 — 中文",
+    excerpt: "Shopee多账号防关联完整教程。8种Shopee关联检测方式详解。马来西亚4G移动代理解决方案。$49/月起。",
+    date: "2026年7月2日",
+    tags: ["中文", "Shopee", "防封"],
+  },
+  {
     slug: "what-is-malaysian-mobile-proxy",
     title: "What Is a Malaysian Mobile Proxy? Complete Guide (2026)",
     excerpt: "Everything you need to know about Malaysian mobile proxies — how they work, why they beat datacenter proxies, and how to get started.",
