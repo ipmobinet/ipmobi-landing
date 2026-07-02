@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "WhatsApp Business proxy Malaysia | IPMOBI",
-  description: "WhatsApp Business proxy Malaysia — WhatsApp proxy Malaysia. Dedicated Malaysian 4G/5G mobile proxy infrastructure from Shah Alam data center.",
+  title: "4G proxy for Shopee seller account | IPMOBI",
+  description: "4G proxy for Shopee seller account — 4G proxy Shopee Malaysia. Dedicated Malaysian 4G/5G mobile proxy infrastructure from Shah Alam data center.",
   openGraph: {
-    title: "WhatsApp Business proxy Malaysia",
-    description: "WhatsApp Business proxy Malaysia — WhatsApp proxy Malaysia. Dedicated Malaysian 4G/5G mobile proxy infrastructure from Shah Alam data center.",
+    title: "4G proxy for Shopee seller account",
+    description: "4G proxy for Shopee seller account — 4G proxy Shopee Malaysia. Dedicated Malaysian 4G/5G mobile proxy infrastructure from Shah Alam data center.",
     type: "article",
     publishedTime: "2026-07-03",
-    url: "https://ipmobi.net/blog/whatsapp-business-proxy-malaysia/",
+    url: "https://ipmobi.net/blog/4g-proxy-for-shopee-seller-account/",
   },
 };
 
@@ -20,17 +20,17 @@ export default function BlogPost() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "BlogPosting",
-          "headline": "WhatsApp Business proxy Malaysia",
+          "headline": "4G proxy for Shopee seller account",
           "inLanguage": "en",
           "datePublished": "2026-07-03",
           "publisher": { "@type": "Organization", "name": "IPMOBI.NET", "url": "https://ipmobi.net" },
-          "about": ["WhatsApp proxy Malaysia"],
+          "about": ["4G proxy Shopee Malaysia"],
         }) }}
       />
 
-      <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">WhatsApp Business proxy Malaysia</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">4G proxy for Shopee seller account</h1>
       <p className="text-slate-500 text-sm mb-2">Published: July 3, 2026 · Shah Alam, Malaysia</p>
-      <p className="text-slate-500 text-sm mb-8">Category: Social Media & TikTok · Target keyword: WhatsApp proxy Malaysia</p>
+      <p className="text-slate-500 text-sm mb-8">Category: E-Commerce & Shopee/Lazada · Target keyword: 4G proxy Shopee Malaysia</p>
 
       <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg mb-8">
         <p className="text-emerald-400 font-semibold mb-1">IPMOBI — Malaysian Mobile Proxies</p>
@@ -38,7 +38,7 @@ export default function BlogPost() {
       </div>
 
       <div className="prose prose-invert max-w-none space-y-4 text-slate-400 leading-relaxed">
-        <p>WhatsApp Business proxy Malaysia — WhatsApp proxy Malaysia. Dedicated Malaysian 4G/5G mobile proxy infrastructure from Shah Alam data center.. IPMOBI provides dedicated physical 4G/5G modems with real Malaysian carrier SIMs in a Shah Alam data center. Unlike shared proxy pools or datacenter IPs, each customer gets their own modem — one modem per port, one IP per customer, zero sharing.</p>
+        <p>4G proxy for Shopee seller account — 4G proxy Shopee Malaysia. Dedicated Malaysian 4G/5G mobile proxy infrastructure from Shah Alam data center.. IPMOBI provides dedicated physical 4G/5G modems with real Malaysian carrier SIMs in a Shah Alam data center. Unlike shared proxy pools or datacenter IPs, each customer gets their own modem — one modem per port, one IP per customer, zero sharing.</p>
 
         <h2 className="text-2xl font-bold text-white mt-12 mb-4">Why Malaysian Mobile IPs Work Better</h2>
         <ul className="space-y-2">
