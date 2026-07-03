@@ -132,12 +132,12 @@ export default function RootLayout({
     <html lang="en" className="h-full antialiased">
       <head>
         <link rel="alternate" type="application/rss+xml" title="IPMOBI Blog" href="/rss.xml" />
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-H94L3FLYC"></script>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-H94L3FLYC3"></script>
         <script dangerouslySetInnerHTML={{__html: `
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', 'G-H94L3FLYC');
+          gtag('config', 'G-H94L3FLYC3');
         `}} />
       </head>
       <body className="min-h-full flex flex-col bg-[#030712] text-slate-300">
