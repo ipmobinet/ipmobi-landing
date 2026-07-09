@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getAllPosts } from "@/lib/posts";
 
 export const metadata: Metadata = {
   title: "Blog — Malaysian Mobile Proxy Guides & Tutorials | IPMOBI",
@@ -25,6 +26,8 @@ const posts = [
 ];
 
 export default function BlogIndex() {
+  const dailyPosts = getAllPosts().slice(0, 10);
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-24">
       <div className="mb-16">
@@ -41,6 +44,30 @@ export default function BlogIndex() {
         "publisher": { "@type": "Organization", "name": "IPMOBI.NET", "url": "https://ipmobi.net" },
       }) }} />
 
+      {dailyPosts.length > 0 && (
+        <>
+          <h2 className="text-2xl font-bold text-white mb-6">Latest Posts</h2>
+          <div className="grid gap-6 mb-16">
+            {dailyPosts.map((post) => (
+              <Link key={post.slug} href={`/blog/posts/${post.slug}/`}
+                className="group block p-6 rounded-xl bg-surface-card border border-surface-border hover:border-emerald-500/30 transition-all">
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {post.tags.map((tag: string) => (
+                    <span key={tag} className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs">{tag}</span>
+                  ))}
+                </div>
+                <h2 className="text-xl font-semibold text-white mb-2 group-hover:text-emerald-400 transition-colors">{post.title}</h2>
+                {post.description && (
+                  <p className="text-slate-400 text-sm mb-3">{post.description}</p>
+                )}
+                <span className="text-slate-600 text-xs">{new Date(post.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+
+      <h2 className="text-2xl font-bold text-white mb-6">Guides & Tutorials</h2>
       <div className="grid gap-8">
         {posts.map((post) => (
           <Link key={post.slug} href={`/blog/${post.slug}/`}
