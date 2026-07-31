@@ -1,72 +1,118 @@
 ---
 title: How to Set Up IP Rotation with REST API for Web Scraping in 2026 – Malaysian Guide  
-description: Learn how to automate IP rotation using IPMOBI’s REST API to keep your web scrapers undetectable while targeting Malaysian e‑commerce sites like Shopee, Lazada, and Mudah.my. This guide walks you through authentication, request‑level rotation, and best‑practice throttling, all tailored for users in Kuala Lumpur, Penang, and beyond. By the end, you’ll have a ready‑to‑run script that switches between Maxis, CelcomDigi, and Digi mobile IPs every few seconds, ensuring reliable data extraction without getting blocked.
-date: 2026-07-17
+description: Learn how to automate IP rotation using IPMOBI’s REST API so your web scrapers stay undetected on Malaysian sites like Shopee, Lazada and Mudah.my. This guide walks you through obtaining an API key, configuring rotation intervals, and integrating the service with a Python scraper for reliable, unlimited‑bandwidth data collection from Kuala Lumpur to Penang.
+date: 2026-08-01
 tags: mobile proxy, web scraping, 中文, rest, guide, shopee, lazada
 ---
 
 
 
 ## Executive Summary  
-Learn how to automate IP rotation using IPMOBI’s REST API to keep your web scrapers undetectable while targeting Malaysian e‑commerce sites like Shopee, Lazada, and Mudah.my. This guide walks you through authentication, request‑level rotation, and best‑practice throttling, all tailored for users in Kuala Lumpur, Penang, and beyond. By the end, you’ll have a ready‑to‑run script that switches between Maxis, CelcomDigi, and Digi mobile IPs every few seconds, ensuring reliable data extraction without getting blocked.  
+Learn how to automate IP rotation using IPMOBI’s REST API so your web scrapers stay undetected on Malaysian sites like Shopee, Lazada and Mudah.my. This guide walks you through obtaining an API key, configuring rotation intervals, and integrating the service with a Python scraper for reliable, unlimited‑bandwidth data collection from Kuala Lumpur to Penang.  
 
----
+---  
 
-## Getting Started with IPMOBI’s REST API for IP Rotation  
+## Why IP Rotation Matters for Malaysian Web Scraping  
 
-IPMOBI provides a simple HTTP‑based interface that returns a fresh mobile proxy address on each call. To begin, sign up for either the **Scraper Node** ($49/mo) or **Automation Pro** ($89/mo) plan and retrieve your API token from the dashboard.  
+Malaysian e‑commerce platforms have tightened anti‑bot measures in recent years. Shopee Malaysia, for example, employs device‑fingerprinting and rate‑limit checks that trigger CAPTCHAs after a handful of requests from the same IP address. Lazada’s Kuala Lumpur‑based servers monitor request patterns per subnet, while Mudah.my’s classifieds backend flags rapid successive posts from a single mobile carrier. When you scrape from a static IP, you quickly hit these thresholds, resulting in blocked requests, incomplete data, or even account bans.  
 
-1. **Authenticate** – Include the token in the `Authorization: Bearer <TOKEN>` header.  
-2. **Request a new IP** – Send a GET request to `https://api.ipmobi.net/v1/rotate?country=MY&type=mobile`. The response JSON contains `ip`, `port`, `username`, and `password`.  
-3. **Integrate into your scraper** – Wrap the request in a function that fetches a new proxy before each HTTP call or after a set number of requests (e.g., every 10 pages).  
+Using Malaysian mobile IPs solves two problems at once. First, the IPs belong to real cellular networks — Maxis (AS9791), CelcomDigi (AS4788) and Digi (AS4788) — making traffic look like genuine user activity from Kuala Lumpur, Penang, Johor Bahru or any other city. Second, mobile carriers frequently rotate their NAT pools, so each request appears to come from a different subscriber, which dramatically reduces the chance of being flagged.  
+
+IPMOBI’s Scraper Node plan gives you unlimited bandwidth on a pool of Malaysian mobile IPs sourced directly from these carriers. By rotating IPs every few seconds or after a set number of requests, you mimic natural browsing behaviour. For instance, a scraper targeting Shopee’s product listings in Kuala Lumpur can request 10 pages, rotate to a new IP from CelcomDigi, then continue — keeping the request rate well below the threshold that triggers a challenge. The same approach works for Lazada’s flash‑sale pages in Penang, where inventory updates happen every minute, and for Mudah.my’s property listings, where posting frequency is high but detection is aggressive.  
+
+In short, IP rotation with a local mobile proxy provider transforms a brittle scraper into a resilient data‑gathering tool that can run 24/7 without manual intervention, delivering complete datasets for price monitoring, sentiment analysis, or inventory tracking across Malaysia’s major online marketplaces.  
+
+---  
+
+## Step‑by‑Step: Configuring IPMOBI’s REST API for Automatic IP Rotation  
+
+### 1. Obtain Your API Credentials  
+Log in to the IPMOBI dashboard at https://ipmobi.net/dashboard, navigate to **API Keys**, and click **Generate New Key**. Copy the token; you’ll need it for every request. Store it securely — never hard‑code it in a public repository.  
+
+### 2. Understand the Rotation Endpoint  
+IPMOBI exposes a simple GET endpoint:  
+
+```
+https://api.ipmobi.net/v1/rotate?token=YOUR_TOKEN
+```  
+
+Calling this URL returns a JSON payload with the newly assigned IP address, port, and the carrier providing it. Example response:  
+
+```json
+{
+  "ip": "103.5.142.87",
+  "port": 1080,
+  "carrier": "Maxis",
+  "asn": 9791,
+  "location": "Kuala Lumpur, MY"
+}
+```  
+
+### 3. Automate Rotation in Your Scraper  
+Below is a Python snippet that integrates the rotation call with a requests‑based scraper targeting Shopee Malaysia. The script rotates IP after every 15 requests (adjust based on your target’s tolerance).  
 
 ```python
-import requests, time
+import time
+import requests
 
-API_TOKEN = "YOUR_TOKEN_HERE"
-def get_mobile_proxy():
-    r = requests.get(
-        "https://api.ipmobi.net/v1/rotate",
-        headers={"Authorization": f"Bearer {API_TOKEN}"},
-        params={"country": "MY", "type": "mobile"}
-    )
-    data = r.json()
+API_TOKEN = "your_token_here"
+BASE_URL = "https://api.ipmobi.net/v1/rotate"
+TARGET = "https://shopee.com.my/search?keyword=smartphone"
+
+def get_proxy():
+    resp = requests.get(BASE_URL, params={"token": API_TOKEN})
+    resp.raise_for_status()
+    data = resp.json()
     return {
-        "http":  f"http://{data['username']}:{data['password']}@{data['ip']}:{data['port']}",
-        "https": f"http://{data['username']}:{data['password']}@{data['ip']}:{data['port']}"
+        "http": f"http://{data['ip']}:{data['port']}",
+        "https": f"http://{data['ip']}:{data['port']}"
     }
 
-def scrape_shopee(product_id):
-    proxies = get_mobile_proxy()
-    url = f"https://shopee.my/product/{product_id}"
-    resp = requests.get(url, proxies=proxies, timeout=15)
-    # process resp...
-    time.sleep(2)  # polite delay
+def fetch_page(session, url, proxy):
+    return session.get(url, proxies=proxy, timeout=15)
+
+session = requests.Session()
+request_count = 0
+proxy = get_proxy()
+
+while request_count < 200:   # example limit
+    try:
+        r = fetch_page(session, TARGET, proxy)
+        if r.status_code == 200:
+            # parse r.content here …
+            pass
+        else:
+            print(f"Non‑200 status: {r.status_code}")
+    except Exception as e:
+        print(f"Request failed: {e}")
+        # On failure, rotate immediately and retry
+        proxy = get_proxy()
+        continue
+
+    request_count += 1
+    if request_count % 15 == 0:   # rotate every 15 requests
+        proxy = get_proxy()
+        time.sleep(2)             # polite pause to avoid bursts
 ```
 
-**Malaysian tips:**  
-- Use `country=MY` to guarantee you receive IPs from Maxis (AS9791), CelcomDigi (AS4788), or Digi (AS4788).  
-- When scraping Shopee or Lazada from Kuala Lumpur, rotate every 5–8 requests to avoid rate‑limits triggered by their geo‑fraud detectors.  
-- For Mudah.my classifieds in Penang, a slower rotation (every 15–20 requests) works well because the site employs lighter bot protection.  
-- Always handle HTTP 429 responses by immediately fetching a new proxy and retrying the request.  
+**Key points:**  
+- The `get_proxy()` function hits the rotation API and returns a proxy dictionary ready for `requests`.  
+- After a defined number of successful requests, we call the API again to fetch a fresh IP.  
+- Errors trigger an immediate rotation, preventing the scraper from staying on a blacklisted address.  
+- The `time.sleep(2)` call introduces a short delay, further mimicking human behaviour and reducing the chance of hitting rate limits.  
 
-By embedding this rotation logic, your scraper appears as a genuine Malaysian mobile user, dramatically reducing bans and CAPTCHAs while harvesting product prices, stock levels, or seller ratings at scale.  
+### 4. Handling Session Persistence  
+Some sites rely on cookies for session continuity. To keep cookies while rotating IPs, create a new `requests.Session()` only when you need to clear cookies (e.g., after logging out). Otherwise, reuse the same session object and simply update its `proxies` attribute with the new proxy dictionary.  
 
----
+### 5. Monitoring and Logging  
+Log each rotation event: timestamp, new IP, carrier, and location. This helps you verify that IPs are indeed changing and provides evidence if a target site later questions your traffic. A simple CSV log works fine for small projects; for larger ops, push logs to a monitoring service like Elasticsearch or Google Sheets via its API.  
 
-## Why IPMOBI Beats Global Competitors for Malaysian Web Scraping  
+### 6. Scaling Up  
+If you need concurrent scrapers, launch multiple worker processes, each with its own API token (you can generate several keys under the same account). IPMOBI’s unlimited bandwidth ensures that adding workers does not incur extra cost, only the modest $49/mo (Scraper Node) or $89/mo (Automation Pro) fee.  
 
-While many providers advertise massive global pools, their pricing models and latency often hurt local projects. IPMOBI’s focus on Malaysian mobile carriers gives you three decisive advantages: lower latency, higher trust scores with Malaysian sites, and predictable unlimited‑bandwidth pricing.  
+By following these steps, you’ll have a fully automated IP‑rotation pipeline that keeps your web scrapers running smoothly on Malaysian platforms — whether you’re monitoring Shopee flash sales in Kuala Lumpur, tracking Lazada price drops in Penang, or aggregating Mudah.my property listings nationwide.  
 
-**Scraper Node ($49/mo)** is ideal if you need a straightforward rotating proxy for a single scraper or a small team. You get unlimited traffic, access to the full Malaysian mobile pool, and API‑level rotation — no extra charges for bandwidth spikes during a Shopee flash sale.  
-
-**Automation Pro ($89/mo)** adds session persistence, sticky IP options, and higher concurrent connection limits. This suits multi‑account automation (e.g., managing several Shopee seller accounts) or when you need to keep the same IP for a longer session while still being able to rotate on demand.  
-
-In contrast, BrightData and Oxylabs charge $500+ and $300+ per month respectively, with metered bandwidth that can quickly exceed budgets when scraping high‑volume sites like Lazada’s flash‑sale pages. SmartProxy’s $75+/mo plan offers only 50 GB of mixed residential/mobile IPs, which is insufficient for continuous Malaysian e‑commerce monitoring and forces you to purchase add‑ons.  
-
-Because IPMOBI’s infrastructure lives in Malaysian data centers, the average ping from Kuala Lumpur to our proxy gateway is under 20 ms, versus 120‑180 ms for overseas providers. This speed difference translates to faster page loads, fewer timeouts, and ultimately more data harvested per hour — critical when monitoring price changes across hundreds of times a day.  
-
----
+---  
 
 | Provider | Price | Bandwidth | IP Pool | Best For |
 |----------|-------|-----------|---------|----------|
@@ -76,35 +122,27 @@ Because IPMOBI’s infrastructure lives in Malaysian data centers, the average p
 | Oxylabs | $300+/mo | Metered | Global | Enterprise |
 | SmartProxy | $75+/mo | 50GB | Mixed | Small projects |
 
----
-
-## FAQ  
-
-**Q: Do I need to manage session cookies when rotating IPs for Shopee?**  
-A: Yes. Shopee ties session cookies to the IP address. When you obtain a new proxy, either discard the old cookie jar or re‑authenticate (login) before continuing. The Automation Pro plan offers sticky IPs for up to 30 minutes if you need to maintain a session longer than a single request.  
-
-**Q: Can I target specific Malaysian cities like Penang or Johor Bahru with IPMOBI?**  
-A: The API returns IPs from the nationwide mobile pool, which includes devices roaming across all states. While you cannot granularly select a city, the geographic distribution of Maxis, CelcomDigi, and Digi ensures a realistic mix of urban and suburban IPs, sufficient for most localisation tests.  
-
-**Q: What happens if I exceed the rate limit on Lazada while using a rotating proxy?**  
-A: Lazada may return HTTP 429 or present a CAPTCHA. Your scraper should catch these responses, immediately call the rotation endpoint to get a fresh IP, and retry the request after a short back‑off (e.g., 5 seconds). Unlimited bandwidth means you won’t be throttled by the proxy provider itself.  
-
-**Q: Is it legal to scrape Mudah.my using mobile proxies from Malaysia?**  
-A: Scraping publicly available data is permissible under Malaysian law, provided you respect the site’s `robots.txt`, avoid overloading their servers, and do not scrape personal data without consent. Using mobile proxies simply masks your origin; it does not change the legal obligations.  
-
-**Q: How often should I rotate IPs when monitoring flash sales on Shopee?**  
-A: Flash sales trigger aggressive anti‑bot measures. A rotation interval of 4‑6 requests (or roughly every 30 seconds) works well in practice. Adjust based on the HTTP response codes you observe — if you see frequent 429s, shorten the interval.  
-
-**Q: Does IPMOBI support both HTTP and SOCKS5 protocols?**  
-A: Currently, the REST API returns HTTP/HTTPS proxies. For SOCKS5 needs, you can wrap the HTTP proxy with a local tool like `proxychains` or use the Automation Pro plan’s optional SOCKS5 gateway (available on request).  
-
-**Q: What is the average uptime of IPMOBI’s Malaysian mobile proxies?**  
-A: Our monitoring shows >99.8 % monthly uptime, with failover between Maxis, CelcomDigi, and Digi towers ensuring continuous availability even during carrier maintenance.  
-
----
-
-**Ready to get started?** → [Visit ipmobi.net/order](https://ipmobi.net/order) — plans from $49/mo, setup in 5 minutes.  
-
 ---  
 
-*Published by IPMOBI.NET — Malaysia's mobile proxy service. Maxis (AS9791), CelcomDigi (AS4788), Digi (AS4788).*
+### FAQ  
+
+**Q: Why should I choose a Malaysian mobile proxy instead of a global residential pool for scraping Shopee Malaysia?**  
+A: Malaysian mobile IPs are recognized by Shopee’s anti‑bot systems as legitimate local traffic. Global residential pools often route through data‑center IPs or foreign carriers, which trigger geo‑safety checks and result in CAPTCHAs or blocks. Using Maxis, CelcomDigi or Digi IPs ensures your requests appear as genuine shoppers from Kuala Lumpur, Penang or other Malaysian cities, dramatically reducing detection rates.  
+
+**Q: How often should I rotate IP when scraping Lazada’s flash‑sale pages?**  
+A: Lazada enforces a strict request‑per‑minute limit per subnet. A safe practice is to rotate after every 8‑10 requests, or roughly every 30‑45 seconds, depending on your concurrency. Monitor the HTTP 429 responses; if you see them, shorten the interval.  
+
+**Q: Can I use the same API key for multiple scraper instances running on different servers?**  
+A: Yes. IPMOBI’s API keys are not tied to a single IP address; you can distribute them across any number of worker nodes, virtual machines or containers. Just ensure each node handles its own rotation calls to avoid race conditions where two workers receive the same IP simultaneously.  
+
+**Q: What happens if the rotation API returns an error or times out?**  
+A: Treat any non‑200 response as a signal to retry after a brief back‑off (e.g., 2‑5 seconds). The API is highly available, but transient network glitches can occur. Implement exponential back‑off in your code to avoid hammering the endpoint.  
+
+**Q: Does IP rotation affect session cookies or login states on sites like Mudah.my?**  
+A: Rotating the outgoing IP does not invalidate cookies stored in your session object. As long as you keep the same `requests.Session()` (or equivalent) and only update its proxy dictionary, cookies persist across IP changes. If you need to log out and start fresh, simply create a new session after rotation.  
+
+**Q: Is there a limit to how many IPs I can request per hour with the Scraper Node plan?**  
+A: No. The Scraper Node plan provides unlimited bandwidth and unlimited API calls for IP rotation. You can rotate as frequently as your scraping logic requires without incurring extra charges.  
+
+**Q: How do I verify that the IP I’m using is truly from a Malaysian mobile carrier?**  
+A: Each rotation response includes the `carrier` and `asn` fields. You can also perform a quick reverse‑DNS lookup or use an external service like `https://ipinfo.io/{ip}` to confirm the ISP and location. The logs will show entries such as “carrier: Maxis, asn: 9
